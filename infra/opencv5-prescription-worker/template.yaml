@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Optional OpenCV 5 image preprocessing worker; no image persistence.
+
+Resources:
+  PrescriptionVisionWorker:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+        - x86_64
+      MemorySize: 2048
+      Timeout: 25
+      EphemeralStorage:
+        Size: 512
+      FunctionUrlConfig:
+        AuthType: AWS_IAM
+        InvokeMode: BUFFERED
+    Metadata:
+      DockerTag: opencv5-python312
+      DockerContext: .
+      Dockerfile: Dockerfile
+
+Outputs:
+  WorkerFunctionArn:
+    Description: Grant only explicitly authorized IAM principals access to invoke this worker.
+    Value: !GetAtt PrescriptionVisionWorker.Arn
+  AuthenticatedWorkerUrl:
+    Description: Function URL requires AWS Signature Version 4 and AWS IAM authorization.
+    Value: !GetAtt PrescriptionVisionWorkerUrl.FunctionUrl
