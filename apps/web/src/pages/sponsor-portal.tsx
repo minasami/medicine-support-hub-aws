@@ -127,10 +127,14 @@ export default function SponsorPortal() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60">
+              <span className="text-slate-500 block mb-1">Project ID</span>
+              <span className="font-mono font-semibold text-teal-600 dark:text-teal-400">{rcState.projectId}</span>
+            </div>
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60">
               <span className="text-slate-500 block mb-1">Subscriber ID</span>
-              <span className="font-mono font-semibold">{rcState.appUserId}</span>
+              <span className="font-mono font-semibold truncate block">{rcState.appUserId}</span>
             </div>
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60">
               <span className="text-slate-500 block mb-1">Active Entitlements</span>

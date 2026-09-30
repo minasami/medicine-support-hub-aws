@@ -107,11 +107,13 @@ export const SPONSORSHIP_TIERS: SponsorshipTier[] = [
 export interface RevenueCatState {
   isConfigured: boolean;
   isSandbox: boolean;
+  projectId: string;
   appUserId: string;
   activeEntitlements: string[];
   lastPurchasedTierId?: string;
 }
 
+export const RC_PROJECT_ID = (import.meta as any).env?.VITE_REVENUECAT_PROJECT_ID || "proj8b481083";
 const LOCAL_STORAGE_KEY = "msh_revenuecat_demo_entitlements";
 const RC_PUBLIC_KEY = (import.meta as any).env?.VITE_REVENUECAT_PUBLIC_API_KEY || "rcb_test_msh_shipaton_2026";
 
@@ -146,6 +148,7 @@ class RevenueCatService {
     return {
       isConfigured: this.configured,
       isSandbox: true,
+      projectId: RC_PROJECT_ID,
       appUserId: this.appUserId,
       activeEntitlements: localSaved.entitlements,
       lastPurchasedTierId: localSaved.lastPurchasedTierId,
