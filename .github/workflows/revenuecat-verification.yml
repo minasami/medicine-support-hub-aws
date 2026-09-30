@@ -1,0 +1,30 @@
+name: RevenueCat verification
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/revenuecat-*'
+      - 'apps/web/src/components/revenuecat-paywall-modal.tsx'
+      - 'apps/web/src/components/public-health-ad-banner.tsx'
+      - 'apps/web/src/components/onesignal-alert-card.tsx'
+      - 'apps/web/src/pages/sponsor-portal.tsx'
+      - '.github/workflows/revenuecat-verification.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Entitlement regression tests
+        run: node --test apps/web/src/lib/revenuecat-access.test.mjs
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.20.0'
+          run_install: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run build

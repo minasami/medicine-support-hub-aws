@@ -17,7 +17,7 @@
 > - 🌐 **Live Demo (AWS Amplify):** [https://main.d24cynqfuktylf.amplifyapp.com](https://main.d24cynqfuktylf.amplifyapp.com)
 > - ☁️ **AWS Cloud Hub & Architecture:** [https://main.d24cynqfuktylf.amplifyapp.com/aws](https://main.d24cynqfuktylf.amplifyapp.com/aws)
 > - 🩺 **Lambda Health Check:** [https://btf73widzhd7aboopn2fes66di0nrlnk.lambda-url.us-east-1.on.aws/](https://btf73widzhd7aboopn2fes66di0nrlnk.lambda-url.us-east-1.on.aws/)
-> - 💳 **RevenueCat Sponsor Portal:** [https://main.d24cynqfuktylf.amplifyapp.com/sponsor](https://main.d24cynqfuktylf.amplifyapp.com/sponsor) *(Judge Promo Code: `SHIPATON2026`)*
+> - 💳 **RevenueCat Sponsor Portal:** [https://main.d24cynqfuktylf.amplifyapp.com/sponsor](https://main.d24cynqfuktylf.amplifyapp.com/sponsor) *(Demo preview only; no paid access or donation is created)*
 
 Medicine Support Hub is an AI-ready, multi-tenant platform designed to help NGOs, healthcare providers, pharmacies, pharmaceutical companies, donors, suppliers, and public-sector programs coordinate medicine assistance from request to impact.
 
@@ -29,6 +29,14 @@ Medicine Support Hub is an AI-ready, multi-tenant platform designed to help NGOs
 **NGO donations:** [https://medicinesupport.app/ngo/donations](https://medicinesupport.app/ngo/donations)
 
 Legacy Vercel URL (historical): [https://medicine-support-hub.vercel.app](https://medicine-support-hub.vercel.app/) · [Manifesto](https://medicinesupport.app/manifesto) · [NGO](https://medicinesupport.app/ngo)
+
+## AWS fork and subscription prototype status
+
+This repository hosts the AWS Amplify frontend. Appwrite remains the application database, authentication and storage backend; a full database migration to AWS is pending.
+
+The sponsor portal now distinguishes RevenueCat-verified entitlements from local demo previews. Checkout is disabled by default. The sample ad interaction generates no money, and notification previews are local browser demonstrations.
+
+See [RevenueCat verification and release checklist](docs/REVENUECAT_VERIFICATION.md) and [corrected Shipaton description](docs/SHIPATON_SUBMISSION.md). Prior demo claims about guaranteed treatment, patient counts, financial multipliers and automatic pharmacy fulfillment are not substantiated.
 
 ## Vision
 
