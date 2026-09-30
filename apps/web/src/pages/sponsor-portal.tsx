@@ -7,6 +7,7 @@ import {
 } from "@/lib/revenuecat-client";
 import { RevenueCatPaywallModal } from "@/components/revenuecat-paywall-modal";
 import { PublicHealthAdBanner } from "@/components/public-health-ad-banner";
+import { OneSignalAlertCard } from "@/components/onesignal-alert-card";
 import {
   Heart,
   Shield,
@@ -289,6 +290,9 @@ export default function SponsorPortal() {
             </div>
           </div>
         </div>
+
+        {/* OneSignal Automated Retention & Refill Alerts Card */}
+        <OneSignalAlertCard />
 
         {/* Gamified Community Verification & Donor Streaks Section */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">

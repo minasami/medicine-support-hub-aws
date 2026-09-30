@@ -31,6 +31,12 @@ if (isCapacitorLocalOrigin()) {
   });
   // No fetch handler — never intercept Capacitor asset loads.
 } else {
+  // OneSignal Web Push SDK integration (Keep Them Coming Back Award)
+  try {
+    importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+  } catch (e) {
+    console.warn("OneSignal SW import skipped:", e);
+  }
 
 const CACHE_VERSION = "msh-pwa-v3-20260714";
 const APP_SHELL = [

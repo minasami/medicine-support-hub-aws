@@ -79,6 +79,24 @@
         })(window,document,'script','dataLayer','GTM-WLV5JX7C');
       })();
     </script>
+    <!-- OneSignal Web Push SDK v16 (Keep Them Coming Back Award) -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.init({
+            appId: "5410295e-f7e9-4ba8-affb-04d7201f3f69",
+            allowLocalhostAsSecureOrigin: true,
+            notifyButton: {
+              enable: true,
+            },
+          });
+        } catch (e) {
+          console.warn("[OneSignal] Init skipped or error:", e);
+        }
+      });
+    </script>
     <title>Medicine Support Hub | Connected Healthcare and Medicines Platform</title>
     <meta name="description" content="Medicine Support Hub connects medicine discovery, verified product intelligence, pharmaceutical company profiles and portfolios, patient support, NGO programs, pharmacy operations, procurement, and impact reporting." />
     <meta name="theme-color" content="#0b1f33" />
