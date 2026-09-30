@@ -19,6 +19,7 @@ import {
   Users,
   Coins,
   FileCheck,
+  Trophy,
 } from "lucide-react";
 
 export default function SponsorPortal() {
@@ -284,6 +285,56 @@ export default function SponsorPortal() {
               <h4 className="font-bold text-sm">Bedrock AI Safety Scans</h4>
               <p className="text-slate-300">
                 Prevents accidental toxicity by checking bioequivalent generic alternatives (e.g. Megamox for Augmentin) across 17,000+ national monographs.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Gamified Community Verification & Donor Streaks Section */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm">Gamified Verification & Donor Streaks</h3>
+                <p className="text-xs text-slate-500">Crowdsourced Clinical Active Learning & Corporate CSR Leaderboards</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-semibold">
+              Roadmap & Active Beta
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
+              <div className="flex items-center gap-2 text-teal-600 dark:text-teal-400 font-bold">
+                <FileCheck className="w-4 h-4" />
+                <span>Prescription OCR Bounties</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                Pharmacists and students compete to decode handwritten Egyptian prescriptions, earning Clinical Trust XP and sponsor bounties.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
+                <Heart className="w-4 h-4 fill-current" />
+                <span>Life Saver Donor Streaks</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                Continuous RevenueCat subscribers unlock Bronze, Silver, Gold, and Platinum Angel badges with transparent impact milestones.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold">
+                <Users className="w-4 h-4" />
+                <span>Corporate CSR Leaderboard</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                Pharmaceutical manufacturers and pharmacy chains compete publicly on chronic patient months sponsored and verified.
               </p>
             </div>
           </div>
