@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <style id="msh-boot-style">
+      html, body { margin: 0; min-height: 100%; background: #0f766e; }
+      #msh-boot {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1.5rem;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        color: #ecfdf5;
+        text-align: center;
+      }
+      #msh-boot .en { font-size: 1.05rem; font-weight: 600; }
+      #msh-boot .ar { font-size: 1rem; opacity: 0.95; direction: rtl; }
+      #msh-boot.msh-boot-error .en,
+      #msh-boot.msh-boot-error .ar { font-weight: 600; }
+      #msh-boot .msh-boot-detail {
+        margin-top: 0.35rem;
+        font-size: 0.85rem;
+        opacity: 0.9;
+        max-width: 22rem;
+        line-height: 1.4;
+      }
+      #msh-boot .msh-boot-reload {
+        margin-top: 1rem;
+        appearance: none;
+        border: 1px solid #a7f3d0;
+        background: #ecfdf5;
+        color: #0f766e;
+        font: inherit;
+        font-weight: 600;
+        padding: 0.65rem 1.25rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+      }
+      #msh-boot .msh-boot-reload:active { opacity: 0.85; }
+    </style>
+    <script>
+      (function () {
+        try {
+          var host = location.hostname || "";
+          var isLocalCapOrigin =
+            host === "localhost" ||
+            host === "app.medicinesupport.local" ||
+            /\.local$/i.test(host);
+          window.__MSH_NATIVE_SHELL__ = isLocalCapOrigin || typeof window.Capacitor !== "undefined";
+          if (!window.__MSH_NATIVE_SHELL__) return;
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) {
+                try { r.unregister(); } catch (e) {}
+              });
+            }).catch(function () {});
+          }
+          if ("caches" in window && caches.keys) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) {
+                try { caches.delete(k); } catch (e) {}
+              });
+            }).catch(function () {});
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script>
+      (function () {
+        if (window.__MSH_NATIVE_SHELL__) return;
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-WLV5JX7C');
+      })();
+    </script>
+    <title>Medicine Support Hub | Connected Healthcare and Medicines Platform</title>
+    <meta name="description" content="Medicine Support Hub connects medicine discovery, verified product intelligence, pharmaceutical company profiles and portfolios, patient support, NGO programs, pharmacy operations, procurement, and impact reporting." />
+    <meta name="theme-color" content="#0b1f33" />
+    <link rel="canonical" href="https://medicinesupport.app/" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="./medicine-support-hub-logo.png" />
+  </head>
+  <body>
+    <div id="root">
+      <div id="msh-boot" role="status" aria-live="polite">
+        <div class="en">Loading Medicine Support Hub…</div>
+        <div class="ar">جاري تحميل منصة دعم الدواء…</div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var WAIT_MS = 20000;
+        var BOOT_MS = 60000;
+        var lastErr = "";
+        function stillBooting() {
+          return !!document.getElementById("msh-boot");
+        }
+        function noteErr(msg) {
+          lastErr = String(msg || "").slice(0, 280);
+        }
+        window.addEventListener("error", function (ev) {
+          noteErr((ev && ev.message) || (ev && ev.filename) || "script error");
+        });
+        window.addEventListener("unhandledrejection", function (ev) {
+          noteErr(ev && ev.reason ? ev.reason : "unhandledrejection");
+        });
+        function showStillWaiting() {
+          var boot = document.getElementById("msh-boot");
+          if (!boot || boot.className.indexOf("msh-boot-error") !== -1) return;
+          var en = boot.querySelector(".en");
+          var ar = boot.querySelector(".ar");
+          if (en) en.textContent = "Still loading… bundled UI should not need the mobile network.";
+          if (ar) ar.textContent = "ما زال التحميل… الواجهة المحلية لا تحتاج الشبكة.";
+        }
+        function showFail() {
+          var boot = document.getElementById("msh-boot");
+          if (!boot) return;
+          boot.className = (boot.className ? boot.className + " " : "") + "msh-boot-error";
+          boot.setAttribute("role", "alert");
+          var detail = lastErr || ("hostname=" + (location.hostname || "") + " href=" + (location.href || ""));
+          boot.innerHTML =
+            '<div class="en">Something went wrong loading the app.</div>' +
+            '<div class="ar" dir="rtl">حدث خطأ أثناء تحميل التطبيق.</div>' +
+            '<div class="msh-boot-detail en"></div>' +
+            '<button type="button" class="msh-boot-reload" id="msh-boot-reload">Reload / إعادة التحميل</button>';
+          var d = boot.querySelector(".msh-boot-detail");
+          if (d) d.textContent = detail;
+          var btn = document.getElementById("msh-boot-reload");
+          if (btn) {
+            btn.addEventListener("click", function () {
+              try { location.reload(); } catch (e) { location.href = location.href; }
+            });
+          }
+        }
+        setTimeout(function () { if (stillBooting()) showStillWaiting(); }, WAIT_MS);
+        setTimeout(function () { if (stillBooting()) showFail(); }, BOOT_MS);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

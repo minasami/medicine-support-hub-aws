@@ -1,0 +1,280 @@
+{
+  "generated_at": "2026-09-12T04:53:39.245895+00:00",
+  "pass": "pass2-after-pr167",
+  "prior_pass1": {
+    "patched": 3075,
+    "skipped_low_confidence": 99,
+    "still_missing_after": 152
+  },
+  "pass2": {
+    "sources": [
+      "egyptdwa CSV 3410",
+      "egyptdwa AJAX search ~1170 unique"
+    ],
+    "improvements": [
+      "Arabic/English trade-name aliases",
+      "compound strength matching (80/5, 5/12.5)",
+      "dosage-form gate (amp vs tab)",
+      "image URL HEAD verify before patch",
+      "EgyptDwa AJAX search expansion for catalog brands (Concor etc.)"
+    ],
+    "high_value_write": {
+      "patched": 252,
+      "missing_doc": 1,
+      "jobs": 253,
+      "concor": 14
+    },
+    "full_stem_write": {
+      "patched": 3595,
+      "missing_doc": 40,
+      "jobs": 3635
+    },
+    "targeted_gapfill": {
+      "patched": 8,
+      "cleared_wrong": [
+        "med_25260"
+      ]
+    },
+    "new_patches_this_session_approx": 3855,
+    "note": "Full-stem write includes re-applying EgyptDwa URLs onto export-stale docs that pass1 may already have filled live; net new catalog coverage is the high-value + previously unmatched fills."
+  },
+  "live_high_value_coverage": {
+    "CONCOR": {
+      "total": 14,
+      "filled": 14,
+      "empty": 0,
+      "empty_names": []
+    },
+    "PLAVIX": {
+      "total": 2,
+      "filled": 1,
+      "empty": 1,
+      "empty_names": [
+        "PLAVIX 300 MG 30 F.C.TABS."
+      ]
+    },
+    "LIPITOR": {
+      "total": 10,
+      "filled": 10,
+      "empty": 0,
+      "empty_names": []
+    },
+    "JANUVIA": {
+      "total": 3,
+      "filled": 3,
+      "empty": 0,
+      "empty_names": []
+    },
+    "GLUCOPHAGE": {
+      "total": 5,
+      "filled": 3,
+      "empty": 2,
+      "empty_names": [
+        "GLUCOPHAGE XR 500 MG 30 TABS.",
+        "GLUCOPHAGE XR 1000 MG 30 TABS."
+      ]
+    },
+    "CRESTOR": {
+      "total": 11,
+      "filled": 11,
+      "empty": 0,
+      "empty_names": []
+    },
+    "NORVASC": {
+      "total": 11,
+      "filled": 7,
+      "empty": 4,
+      "empty_names": [
+        "NORVASC VAL 10/160MG 30 F.C.TABS.",
+        "NORVASC VAL 5/160MG 30 F.C.TABS.",
+        "NORVASC VAL 5/80MG 30 F.C.TABS.",
+        "NORVASC VAL 10/160 MG 30 TAB"
+      ]
+    },
+    "AUGMENTIN": {
+      "total": 13,
+      "filled": 11,
+      "empty": 2,
+      "empty_names": [
+        "AUGMENTIN 600 MG VIAL FOR I.V. INF.",
+        "AUGMENTIN 62.5MG/ML INFANT DROPS 20 ML"
+      ]
+    },
+    "NEXIUM": {
+      "total": 9,
+      "filled": 8,
+      "empty": 1,
+      "empty_names": [
+        "NEXIUM 40 MG POWDER FOR I.V. INF. VIAL"
+      ]
+    },
+    "PANADOL": {
+      "total": 20,
+      "filled": 19,
+      "empty": 1,
+      "empty_names": [
+        "PANADOL ACUTE HEAD COLD 20 F.C.TABS."
+      ]
+    },
+    "SINGULAIR": {
+      "total": 8,
+      "filled": 8,
+      "empty": 0,
+      "empty_names": []
+    },
+    "TWYNSTA": {
+      "total": 2,
+      "filled": 2,
+      "empty": 0,
+      "empty_names": []
+    },
+    "ZOCOR": {
+      "total": 3,
+      "filled": 3,
+      "empty": 0,
+      "empty_names": []
+    },
+    "NEUROTON": {
+      "total": 3,
+      "filled": 2,
+      "empty": 1,
+      "empty_names": [
+        "NEUROTON 6 I.M. AMPS."
+      ]
+    },
+    "LIBRAX": {
+      "total": 1,
+      "filled": 1,
+      "empty": 0,
+      "empty_names": []
+    },
+    "VIAGRA": {
+      "total": 2,
+      "filled": 2,
+      "empty": 0,
+      "empty_names": []
+    },
+    "CATAFLAM": {
+      "total": 6,
+      "filled": 6,
+      "empty": 0,
+      "empty_names": []
+    },
+    "VOLTAREN": {
+      "total": 16,
+      "filled": 16,
+      "empty": 0,
+      "empty_names": []
+    },
+    "LANTUS": {
+      "total": 3,
+      "filled": 3,
+      "empty": 0,
+      "empty_names": []
+    },
+    "HUMALOG": {
+      "total": 6,
+      "filled": 6,
+      "empty": 0,
+      "empty_names": []
+    },
+    "COVERAM": {
+      "total": 8,
+      "filled": 8,
+      "empty": 0,
+      "empty_names": []
+    },
+    "XARELTO": {
+      "total": 7,
+      "filled": 6,
+      "empty": 1,
+      "empty_names": [
+        "XARELTO 10 MG 10 F.C. TAB."
+      ]
+    },
+    "AMARYL": {
+      "total": 12,
+      "filled": 10,
+      "empty": 2,
+      "empty_names": [
+        "AMARYLLIS DOED F/W  75 ML",
+        "AMARYLLIS DOED F/W  75 ML"
+      ]
+    }
+  },
+  "verify_examples": [
+    {
+      "id": "med_1002",
+      "name": "Concor 5mg Film-Coated Tablets",
+      "image_url": "https://egyptdwa.com/dwa/concor-5-mg-30-tab-2975.jpg"
+    },
+    {
+      "id": "med_19522",
+      "name": "GLUCOPHAGE 1000 MG 30 F.C.TABS.",
+      "image_url": "https://egyptdwa.com/dwa/glucophage-1000mg-30-f-c-tablet-5608.jpg"
+    },
+    {
+      "id": "med_11841",
+      "name": "AUGMENTIN 1 GM 14 F.C.TABS.",
+      "image_url": "https://egyptdwa.com/dwa/augmentin-1-gm-14-tablets-1126.jpg"
+    },
+    {
+      "id": "med_30550",
+      "name": "SINGULAIR 4 MG PAED. 14 CHEW. TABS.",
+      "image_url": "https://egyptdwa.com/dwa/singulair-4mg-ped-14-chewable-tabs-10516.jpg"
+    },
+    {
+      "id": "med_32965",
+      "name": "TWYNSTA 80 / 5 MG 28 TAB.",
+      "image_url": "https://egyptdwa.com/dwa/twynsta-80-5-mg-28-tab-28626.jpg"
+    }
+  ],
+  "ui": {
+    "changes": "none this pass — portfolio cards (#165) and encyclopedia already render image_url (PR #167)",
+    "version_bump": false,
+    "android": {
+      "versionName": "1.0.21",
+      "versionCode": 22
+    }
+  },
+  "remaining_notable_gaps": {
+    "PLAVIX": [
+      "PLAVIX 300 MG 30 F.C.TABS."
+    ],
+    "GLUCOPHAGE": [
+      "GLUCOPHAGE XR 500 MG 30 TABS.",
+      "GLUCOPHAGE XR 1000 MG 30 TABS."
+    ],
+    "NORVASC": [
+      "NORVASC VAL 10/160MG 30 F.C.TABS.",
+      "NORVASC VAL 5/160MG 30 F.C.TABS.",
+      "NORVASC VAL 5/80MG 30 F.C.TABS.",
+      "NORVASC VAL 10/160 MG 30 TAB"
+    ],
+    "AUGMENTIN": [
+      "AUGMENTIN 600 MG VIAL FOR I.V. INF.",
+      "AUGMENTIN 62.5MG/ML INFANT DROPS 20 ML"
+    ],
+    "NEXIUM": [
+      "NEXIUM 40 MG POWDER FOR I.V. INF. VIAL"
+    ],
+    "PANADOL": [
+      "PANADOL ACUTE HEAD COLD 20 F.C.TABS."
+    ],
+    "NEUROTON": [
+      "NEUROTON 6 I.M. AMPS."
+    ],
+    "XARELTO": [
+      "XARELTO 10 MG 10 F.C. TAB."
+    ],
+    "AMARYL": [
+      "AMARYLLIS DOED F/W  75 ML",
+      "AMARYLLIS DOED F/W  75 ML"
+    ]
+  },
+  "scripts_added": [
+    "scripts/enrich-product-photos-pass2.mjs",
+    "npm run photos:enrich:pass2[:dry|:hv]"
+  ],
+  "provenance": "egyptdwa.com:packshot (csv + ajax-search)"
+}

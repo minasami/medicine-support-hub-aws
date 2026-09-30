@@ -1,0 +1,16 @@
+{
+  "name": "medicine-support-hub",
+  "version": "0.3.3",
+  "description": "Egyptian medicine catalog search, indicative EGP cost estimates, same-INN price comparison, insurance hints, and OAuth 2.1 account/request tools via the Medicine Support Hub remote MCP server.",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "medicine-support-hub": {
+      "url": "https://mcp.medicinesupport.app/mcp",
+      "type": "http",
+      "timeout": 15000,
+      "oauth": {
+        "enabled": true
+      }
+    }
+  }
+}

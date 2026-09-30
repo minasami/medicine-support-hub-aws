@@ -1,0 +1,38 @@
+{
+  "name": "medicine-support-hub",
+  "description": "Medicine Support Hub plugins for Grok Build — Egyptian medicine catalog MCP.",
+  "owner": {
+    "name": "Medicine Support Hub",
+    "email": "support@medicinesupport.app",
+    "url": "https://medicinesupport.app"
+  },
+  "plugins": [
+    {
+      "name": "medicine-support-hub",
+      "description": "Egyptian medicine catalog search, indicative EGP costs, same-INN price compare, insurance hints, and signed-in support, prescription, and personal watchlist tools via remote MCP (OAuth 2.1); catalog tools remain public.",
+      "category": "productivity",
+      "version": "0.3.3",
+      "author": {
+        "name": "Medicine Support Hub",
+        "email": "support@medicinesupport.app"
+      },
+      "homepage": "https://medicinesupport.app",
+      "keywords": [
+        "medicine-support-hub",
+        "medicinesupport",
+        "egyptian medicines",
+        "egp medicine prices"
+      ],
+      "domains": [
+        "medicinesupport.app",
+        "mcp.medicinesupport.app",
+        "msh-mcp.vercel.app"
+      ],
+      "tags": ["mcp", "healthcare", "egypt"],
+      "source": {
+        "type": "local",
+        "path": "./apps/mcp-server/marketplaces/grok/medicine-support-hub"
+      }
+    }
+  ]
+}

@@ -1,0 +1,306 @@
+{
+  "projectId": "medicine-support-hub",
+  "name": "Medicine Support Hub",
+  "functions": [
+    {
+      "$id": "edge-api",
+      "name": "Edge API (health + catalog ping)",
+      "runtime": "node-18.0",
+      "execute": [
+        "any"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 30,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/edge-api"
+    },
+    {
+      "$id": "firecrawl-image-enricher",
+      "name": "Firecrawl Product Image Enricher",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "0 0 * * *",
+      "timeout": 300,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/firecrawl-image-enricher"
+    },
+    {
+      "$id": "ocr-prescription-parser",
+      "name": "OCR Prescription Scanner & Document Parser",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 120,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/ocr-prescription-parser"
+    },
+    {
+      "$id": "eda-tariff-sync",
+      "name": "EDA Price Tariff Sync & Recalls",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "0 2 * * *",
+      "timeout": 300,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/eda-tariff-sync"
+    },
+    {
+      "$id": "adaptive-signal-aggregator",
+      "name": "Adaptive Signal Aggregator",
+      "runtime": "node-18.0",
+      "execute": [
+        "any"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/adaptive-signal-aggregator"
+    },
+    {
+      "$id": "drugeye-refresh",
+      "name": "DrugEye Catalog Refresh",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 300,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/drugeye-refresh"
+    },
+    {
+      "$id": "rankDrugs",
+      "name": "Rank Drugs (CF + completeness)",
+      "runtime": "node-18.0",
+      "execute": [
+        "users",
+        "any"
+      ],
+      "events": [],
+      "schedule": "0 3 * * *",
+      "timeout": 300,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/rankDrugs"
+    },
+    {
+      "$id": "sendPush",
+      "name": "Send Push via Appwrite Messaging",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/sendPush"
+    },
+    {
+      "$id": "processContribution",
+      "name": "Process barcode wiki contribution (TrustScore)",
+      "runtime": "node-18.0",
+      "execute": [
+        "users",
+        "any"
+      ],
+      "events": [
+        "databases.medicine_support_hub.collections.drug_contributions.documents.*.create",
+        "databases.medicine_support_hub.collections.drug_contributions.documents.*.update"
+      ],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/processContribution"
+    },
+    {
+      "$id": "retrainModel",
+      "name": "RLAIF Retrain Model (weekly export)",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "0 4 * * 0",
+      "timeout": 120,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/retrainModel"
+    },
+    {
+      "$id": "pharmacy-update-quote",
+      "name": "Pharmacy Update Quote (versioned)",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/pharmacy-update-quote"
+    },
+    {
+      "$id": "submit-annotation",
+      "name": "Submit RLAIF Annotation Vote",
+      "runtime": "node-18.0",
+      "execute": [
+        "users"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/submit-annotation"
+    },
+    {
+      "$id": "order-status-webhook",
+      "name": "Order Status Webhook (Messaging)",
+      "runtime": "node-18.0",
+      "execute": [
+        "users",
+        "any"
+      ],
+      "events": [
+        "databases.medicine_support_hub.collections.orders.documents.*.update"
+      ],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/order-status-webhook"
+    },
+    {
+      "$id": "detectCatalogQuality",
+      "name": "Detect Catalog Quality (dupes + misinfo)",
+      "runtime": "node-18.0",
+      "execute": [
+        "users",
+        "any"
+      ],
+      "events": [],
+      "schedule": "30 4 * * *",
+      "timeout": 300,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/detectCatalogQuality"
+    },
+    {
+      "$id": "record-pair-interest",
+      "name": "Record pair interest",
+      "runtime": "node-22",
+      "execute": [
+        "any"
+      ],
+      "scopes": [
+        "documents.read",
+        "documents.write"
+      ],
+      "timeout": 30,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/record-pair-interest"
+    },
+    {
+      "$id": "prescription-service",
+      "name": "Prescription Management Service (Gateway & Ingestion)",
+      "runtime": "node-22.0",
+      "execute": [
+        "users"
+      ],
+      "scopes": [
+        "documents.read",
+        "documents.write",
+        "files.read",
+        "teams.read",
+        "users.read"
+      ],
+      "events": [],
+      "schedule": "",
+      "timeout": 60,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/prescription-service",
+      "vars": [
+        {
+          "key": "DATABASE_ID",
+          "value": ""
+        },
+        {
+          "key": "MANAGEMENT_TEAM_ID",
+          "value": ""
+        },
+        {
+          "key": "PRESCRIPTIONS_COLLECTION_ID",
+          "value": "prescriptions"
+        },
+        {
+          "key": "ITEMS_COLLECTION_ID",
+          "value": "prescription_items"
+        },
+        {
+          "key": "PHARMACIES_COLLECTION_ID",
+          "value": "pharmacies"
+        },
+        {
+          "key": "STORAGE_BUCKET_ID",
+          "value": "prescription-images"
+        }
+      ]
+    }
+  ]
+}

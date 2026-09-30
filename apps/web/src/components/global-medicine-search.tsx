@@ -1,0 +1,503 @@
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { Clock3, Search, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/lib/i18n";
+import { PackshotFrame } from "@/components/packshot-frame";
+import { usePatientAuth } from "@/lib/patient-auth";
+import { searchCollection } from "@/lib/search-engine";
+import { BABY_FORMULAS_DATA } from "@/data/baby-formulas-data";
+import { encyclopediaProductUrl } from "@/lib/catalog-links";
+import { localeMedicineNames } from "@/lib/medicine-display";
+import { fetchMedicinesPage } from "@/lib/medicines-appwrite-page";
+import {
+  clearRecentSearches,
+  readRecentSearches,
+  rememberRecentSearch,
+  RECENT_SEARCHES_KEY,
+  RECENT_SEARCHES_CHANGED,
+  type RecentSearch,
+} from "@/lib/recent-searches";
+
+function HighlightMatch({ text, search }: { text: string; search: string }) {
+  if (!search.trim()) return <>{text}</>;
+  const escapedSearch = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const regex = new RegExp(`(${escapedSearch})`, "gi");
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, index) =>
+        regex.test(part) ? (
+          <mark
+            key={index}
+            className="bg-primary/20 text-foreground rounded px-0.5 font-bold"
+          >
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
+type MedicineSuggestion = {
+  canonical_id: number;
+  name_en: string | null;
+  name_ar: string | null;
+  scientific_name: string | null;
+  manufacturer: string | null;
+  image_url?: string | null;
+  id_source?: "live_db" | "static_dataset" | "unknown";
+  $id?: string;
+};
+
+function suggestionImageUrl(url?: string | null): string | null {
+  if (!url || !String(url).trim()) return null;
+  if (/unsplash\.com|placeholder|via\.placeholder|no_image|picsum/i.test(url))
+    return null;
+  return url;
+}
+
+function isMobileViewport() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 767px)").matches;
+}
+
+function medicinesSearchHref(q: string) {
+  const n = String(q || "").trim();
+  if (!n) return "/medicines";
+  // Appwrite serves this static route as a directory. Its slash redirect drops
+  // the query string, so navigate directly to the directory entry point.
+  return `/medicines/?q=${encodeURIComponent(n)}`;
+}
+
+export function GlobalMedicineSearch({
+  isStaffPage,
+}: {
+  isStaffPage: boolean;
+}) {
+  const { t, language } = useLanguage();
+  const { supabaseFetch } = usePatientAuth();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const requestId = useRef(0);
+  // Mobile: start collapsed so header stays usable
+  const [expanded, setExpanded] = useState(() => !isMobileViewport());
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<MedicineSuggestion[]>([]);
+  const [recentSearches, setRecentSearches] =
+    useState<RecentSearch[]>(readRecentSearches);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => setRecentSearches(readRecentSearches());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === RECENT_SEARCHES_KEY || event.key === null) refresh();
+    };
+    window.addEventListener(RECENT_SEARCHES_CHANGED, refresh);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(RECENT_SEARCHES_CHANGED, refresh);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  useEffect(() => setActiveIndex(-1), [recentSearches, expanded]);
+
+  function openMedicine(item: MedicineSuggestion) {
+    const name = item.name_en || item.name_ar || query;
+    rememberRecentSearch(name);
+    const href = encyclopediaProductUrl({
+      nameEn: item.name_en,
+      nameAr: item.name_ar,
+      canonicalId: item.canonical_id,
+      idSource: item.id_source === "live_db" ? "live_db" : "unknown",
+      forceCatalogId: item.id_source === "live_db",
+    });
+    window.location.assign(href);
+  }
+
+  function searchAll(value = query) {
+    const normalized = value.trim();
+    if (!normalized) return;
+    rememberRecentSearch(normalized);
+    window.location.assign(medicinesSearchHref(normalized));
+  }
+
+  function openRecentSearch(item: RecentSearch) {
+    searchAll(item.query);
+  }
+
+  useEffect(() => {
+    if (!expanded) return;
+    // Delay focus on mobile to avoid jumping layout before paint
+    const tmr = window.setTimeout(() => inputRef.current?.focus(), 50);
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setExpanded(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => {
+      window.clearTimeout(tmr);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+    };
+  }, [expanded]);
+
+  useEffect(() => {
+    const normalized = query.trim();
+    setActiveIndex(-1);
+    if (normalized.length < 2) {
+      requestId.current += 1;
+      setSuggestions([]);
+      setLoading(false);
+      return;
+    }
+    const currentRequest = ++requestId.current;
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+
+      void fetchMedicinesPage({
+        limit: 7,
+        filters: { query: normalized },
+      })
+        .then(async (page) => {
+          if (currentRequest !== requestId.current) return;
+          if (page.items.length > 0 && page.source === "appwrite") {
+            setSuggestions(
+              page.items.map((m) => ({
+                canonical_id: m.canonical_id,
+                name_en: m.name_en,
+                name_ar: m.name_ar,
+                scientific_name: m.scientific_name,
+                manufacturer: m.manufacturer,
+                image_url: m.image_url || null,
+                id_source: "live_db" as const,
+                $id: m.$id,
+              })),
+            );
+            return;
+          }
+
+          try {
+            const rows = await supabaseFetch<MedicineSuggestion[]>(
+              "/rest/v1/rpc/search_medicine_encyclopedia_v4",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  p_query: normalized,
+                  p_manufacturer: null,
+                  p_drug_class: null,
+                  p_route: null,
+                  p_category: null,
+                  p_scientific_name: null,
+                  p_source_system: null,
+                  p_min_price: null,
+                  p_max_price: null,
+                  p_has_price_history: null,
+                  p_verified_only: null,
+                  p_has_marketplace_offers: null,
+                  p_has_image: null,
+                  p_min_completeness: null,
+                  p_query_mode: "all",
+                  p_sort: "best",
+                  p_limit: 7,
+                  p_offset: 0,
+                }),
+              },
+            );
+            if (currentRequest !== requestId.current) return;
+            const valid = (Array.isArray(rows) ? rows : []).filter(
+              (m) =>
+                m &&
+                m.name_en &&
+                !m.name_en.toLowerCase().includes("mapped legacy"),
+            );
+            if (valid.length > 0) {
+              setSuggestions(
+                valid.map((m) => ({ ...m, id_source: "unknown" as const })),
+              );
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
+
+          if (currentRequest !== requestId.current) return;
+          if (page.items.length > 0) {
+            setSuggestions(
+              page.items.map((m) => ({
+                canonical_id: m.canonical_id,
+                name_en: m.name_en,
+                name_ar: m.name_ar,
+                scientific_name: m.scientific_name,
+                manufacturer: m.manufacturer,
+                image_url: m.image_url || null,
+                id_source:
+                  (m.id_source as MedicineSuggestion["id_source"]) ||
+                  "static_dataset",
+              })),
+            );
+            return;
+          }
+
+          const localMatches = searchCollection(BABY_FORMULAS_DATA, normalized)
+            .slice(0, 7)
+            .map((r) => ({
+              canonical_id: Number(r.item.canonical_id || 90001),
+              name_en: r.item.name_en,
+              name_ar: r.item.name_ar,
+              scientific_name: r.item.key_ingredients,
+              manufacturer: r.item.manufacturer,
+              image_url: r.item.image_url || null,
+              id_source: "static_dataset" as const,
+            }));
+          setSuggestions(localMatches);
+        })
+        .catch(() => {
+          if (currentRequest !== requestId.current) return;
+          const localMatches = searchCollection(BABY_FORMULAS_DATA, normalized)
+            .slice(0, 7)
+            .map((r) => ({
+              canonical_id: Number(r.item.canonical_id || 90001),
+              name_en: r.item.name_en,
+              name_ar: r.item.name_ar,
+              scientific_name: r.item.key_ingredients,
+              manufacturer: r.item.manufacturer,
+              image_url: r.item.image_url || null,
+              id_source: "static_dataset" as const,
+            }));
+          setSuggestions(localMatches);
+        })
+        .finally(() => {
+          if (currentRequest === requestId.current) setLoading(false);
+        });
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [query, supabaseFetch]);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (query.trim().length < 2) {
+      const recent = recentSearches[activeIndex];
+      if (recent) {
+        openRecentSearch(recent);
+        return;
+      }
+    }
+    const selected =
+      query.trim().length >= 2 ? suggestions[activeIndex] : undefined;
+    if (selected) openMedicine(selected);
+    else searchAll();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    const optionCount =
+      query.trim().length < 2
+        ? recentSearches.length
+        : loading
+          ? 0
+          : suggestions.length;
+    if (event.key === "ArrowDown" && optionCount) {
+      event.preventDefault();
+      setActiveIndex((index) => Math.min(index + 1, optionCount - 1));
+    } else if (event.key === "ArrowUp" && optionCount) {
+      event.preventDefault();
+      setActiveIndex((index) => Math.max(index - 1, 0));
+    } else if (event.key === "Escape") {
+      setExpanded(false);
+    }
+  }
+
+  const showDropdown =
+    expanded && (query.trim().length >= 2 || recentSearches.length > 0);
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative flex min-w-0 flex-1 justify-center px-0.5 sm:px-1"
+    >
+      {expanded ? (
+        <form onSubmit={submit} className="w-full max-w-3xl">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:start-4 sm:h-5 sm:w-5" />
+            <Input
+              ref={inputRef}
+              role="combobox"
+              aria-expanded={showDropdown}
+              aria-controls="global-medicine-search-results"
+              aria-activedescendant={
+                activeIndex >= 0
+                  ? `${query.trim().length < 2 ? "medicine-recent" : "medicine-suggestion"}-${activeIndex}`
+                  : undefined
+              }
+              aria-label={t("Search medicines", "البحث عن الأدوية")}
+              value={query}
+              onFocus={() => setExpanded(true)}
+              onChange={(event) => {
+                setActiveIndex(-1);
+                setSuggestions([]);
+                setQuery(event.target.value);
+              }}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              enterKeyHint="search"
+              placeholder={t(
+                "Name, barcode, company…",
+                "الاسم أو الباركود أو الشركة…",
+              )}
+              className={`h-11 min-h-11 rounded-full border border-slate-200 dark:border-slate-800 ps-10 pe-16 text-base shadow-sm ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 sm:h-11 sm:ps-12 sm:pe-20 ${isStaffPage ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-400" : "bg-background text-foreground"}`}
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
+                aria-label={t("Clear search", "مسح البحث")}
+                className="absolute end-10 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground sm:end-12"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                aria-label={t("Close search", "إغلاق البحث")}
+                className="absolute end-10 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted sm:hidden"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="submit"
+              aria-label={t("Search", "بحث")}
+              className="absolute end-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground sm:end-2"
+            >
+              <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          </label>
+        </form>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-expanded="false"
+          aria-label={t("Open medicine search", "فتح البحث عن الأدوية")}
+          onClick={() => setExpanded(true)}
+          className={`h-10 min-w-10 gap-2 rounded-full sm:h-9 sm:w-full sm:max-w-xs sm:justify-start sm:border ${isStaffPage ? "text-slate-300 sm:border-slate-700 sm:bg-slate-800/70" : "sm:bg-muted/40"}`}
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          <span className="hidden truncate text-muted-foreground sm:inline">
+            {t("Name, barcode, company…", "الاسم أو الباركود أو الشركة…")}
+          </span>
+        </Button>
+      )}
+
+      {showDropdown && (
+        <div
+          id="global-medicine-search-results"
+          role="listbox"
+          className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-[80] max-h-[min(22rem,55dvh)] w-full overflow-y-auto rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl sm:left-1/2 sm:right-auto sm:w-[min(38rem,calc(100vw-1.5rem))] sm:-translate-x-1/2 sm:rounded-2xl sm:p-2"
+        >
+          {query.trim().length < 2 ? (
+            <>
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("Recent searches", "عمليات البحث الأخيرة")}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearRecentSearches}
+                  className="h-8 gap-1 px-2 text-xs"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t("Clear", "مسح")}
+                </Button>
+              </div>
+              {recentSearches.map((item, index) => (
+                <button
+                  id={`medicine-recent-${index}`}
+                  key={item.query}
+                  type="button"
+                  role="option"
+                  aria-selected={activeIndex === index}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => openRecentSearch(item)}
+                  className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none ${activeIndex === index ? "bg-accent" : ""}`}
+                >
+                  <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{item.query}</span>
+                </button>
+              ))}
+            </>
+          ) : loading ? (
+            <div className="space-y-1 px-1 py-2" aria-busy="true" aria-label={t("Finding medicines…", "جارٍ البحث عن الأدوية…")}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2">
+                  <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-muted/50" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-3.5 w-[70%] animate-pulse rounded bg-muted/60" />
+                    <div className="h-2.5 w-[45%] animate-pulse rounded bg-muted/40" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : suggestions.length ? (
+            suggestions.map((item, index) => {
+              const { primary, secondary } = localeMedicineNames(
+                language,
+                item.name_en,
+                item.name_ar,
+                item.scientific_name,
+              );
+              return (
+              <button
+                id={`medicine-suggestion-${index}`}
+                key={`${item.canonical_id}-${item.name_en}`}
+                type="button"
+                role="option"
+                aria-selected={activeIndex === index}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => openMedicine(item)}
+                className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-start hover:bg-primary/5 focus-visible:bg-primary/5 focus-visible:outline-none ${activeIndex === index ? "bg-primary/5" : ""}`}
+              >
+                <PackshotFrame
+                  url={suggestionImageUrl(item.image_url)}
+                  variant="thumb"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">
+                    <HighlightMatch text={primary || ""} search={query} />
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {[secondary, item.scientific_name, item.manufacturer]
+                      .filter(Boolean)
+                      .filter((v, i, a) => a.indexOf(v) === i)
+                      .join(" · ")}
+                  </span>
+                </span>
+              </button>
+              );
+            })
+          ) : (
+            <button
+              type="button"
+              onClick={() => searchAll()}
+              className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-start text-sm hover:bg-accent"
+            >
+              <Search className="h-4 w-4 text-muted-foreground" />
+              {t("No exact match — search all for", "لا تطابق دقيق — ابحث في الكل عن")} “
+              {query.trim()}”
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

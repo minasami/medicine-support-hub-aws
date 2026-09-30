@@ -1,0 +1,14 @@
+{
+  "name": "prescription-service",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "node --test test/prescription_service.test.mjs",
+    "test:integration": "node test/appwrite_isolated_integration.mjs"
+  },
+  "dependencies": {
+    "node-appwrite": "^14.2.0",
+    "zod": "^3.23.8"
+  }
+}

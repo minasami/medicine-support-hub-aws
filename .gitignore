@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.vercel/
+.vite/
+.cache/
+.local/
+tmp/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+.DS_Store
+Thumbs.db
+.pnpm-store/
+**/.pnpm-store/
+
+# Local enrichment exports (large)
+scripts/reports/
+
+# Temporary root assets
+msh_cover_*
+aws_cover_*

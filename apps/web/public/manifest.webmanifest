@@ -1,0 +1,144 @@
+{
+  "id": "/",
+  "name": "Medicine Support Hub",
+  "short_name": "Medicine Hub",
+  "description": "Connected medicine encyclopedia, company portfolios, patient support, pharmacy operations, healthcare collaboration, learning, and verified marketplace intelligence.",
+  "start_url": "/medicines?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#0b1f33",
+  "lang": "en",
+  "dir": "auto",
+  "categories": [
+    "medical",
+    "health",
+    "education",
+    "business",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "./medicine-support-hub-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./brand/logo-mark-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./brand/logo-mark-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search medicines",
+      "short_name": "Medicines",
+      "url": "/medicines?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "./medicine-support-hub-logo.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Find clinics and physicians",
+      "short_name": "Care",
+      "url": "/clinics?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "./medicine-support-hub-logo.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Search the platform",
+      "short_name": "Search",
+      "url": "/search?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "./medicine-support-hub-logo.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Company portfolios",
+      "short_name": "Companies",
+      "url": "/companies?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "./medicine-support-hub-logo.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Connected platform map",
+      "short_name": "Network",
+      "url": "/network?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "./medicine-support-hub-logo.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Verified marketplace",
+      "short_name": "Marketplace",
+      "url": "/marketplace?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "./medicine-support-hub-logo.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/search",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "query",
+      "url": "url"
+    }
+  }
+}

@@ -1,0 +1,341 @@
+import { useEffect, useState } from "react";
+import { BadgeCheck, Building2, Database, Loader2, Network, RefreshCw, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConnectedNextActions } from "@/components/connected-next-actions";
+import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/lib/i18n";
+import { usePatientAuth } from "@/lib/patient-auth";
+import { cleanCompanyOrigin, seoEntityPath } from "@/lib/seo-entities";
+import { medicineCompanyRoleLabel, type MedicineCompanyRole } from "@/lib/medicine-companies";
+
+interface CompanyRow {
+  id: string;
+  company_name: string;
+  company_slug: string;
+  origin: string | null;
+  source_name: string;
+  source_currency: string;
+  product_count: number;
+  active_product_count: number;
+  archived_product_count: number;
+  prescription_product_count: number;
+  disease_area_count: number;
+  generic_count: number;
+  min_price: number | null;
+  max_price: number | null;
+  therapeutic_areas: string[] | null;
+  leading_generics: string[] | null;
+  portfolio_sample: string[] | null;
+  dataset_metadata: Record<string, unknown> | null;
+  latest_source_update: string | null;
+  official_display_name: string | null;
+  official_company_type: string | null;
+  official_description: string | null;
+  official_logo_url: string | null;
+  official_country: string | null;
+  official_city: string | null;
+  official_therapeutic_areas: string[] | null;
+  official_product_categories: string[] | null;
+  official_capabilities: string[] | null;
+  official_verified: boolean;
+  total_count: number;
+}
+
+const PAGE_SIZE = 60;
+const values = (value: string[] | null | undefined) => (Array.isArray(value) ? value.filter(Boolean) : []);
+const humanize = (value: string | null | undefined) =>
+  String(value || "Healthcare company")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+const initialQuery = () => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q")?.trim() || "");
+const relationshipRoles = (company: CompanyRow) => {
+  const roles = company.dataset_metadata?.relationshipRoles;
+  return Array.isArray(roles) ? roles.filter((role): role is MedicineCompanyRole => ["manufacturer", "toll_manufacturer", "trademark_owner"].includes(String(role))) : [];
+};
+const relationshipCount = (company: CompanyRow, role: MedicineCompanyRole) => Number(company.dataset_metadata?.[role === "manufacturer" ? "manufacturerProducts" : role === "toll_manufacturer" ? "tollManufacturedProducts" : "trademarkOwnedProducts"] || 0);
+
+export default function CompanyProfiles() {
+  const { t } = useLanguage();
+  const { supabaseFetch } = usePatientAuth();
+  const [query, setQuery] = useState(initialQuery);
+  const [appliedQuery, setAppliedQuery] = useState(initialQuery);
+  const [companies, setCompanies] = useState<CompanyRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load(search = appliedQuery, offset = 0, append = false) {
+    setLoading(true);
+    setError(null);
+    try {
+      const rows = await supabaseFetch<CompanyRow[]>("/rest/v1/rpc/company_profile_directory_page", {
+        method: "POST",
+        body: JSON.stringify({
+          p_query: search.trim() || null,
+          p_limit: PAGE_SIZE,
+          p_offset: offset,
+        }),
+      });
+      const safeRows = Array.isArray(rows) ? rows : [];
+      setCompanies((current) => (append ? [...current, ...safeRows] : safeRows));
+      setTotal(Number(safeRows[0]?.total_count || (append ? offset + safeRows.length : safeRows.length)));
+      setAppliedQuery(search.trim());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t("Could not load company profiles.", "تعذر تحميل ملفات الشركات."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load(initialQuery(), 0, false);
+  }, []);
+
+  const officialCount = companies.filter((company) => company.official_verified).length;
+  const visibleProducts = companies.reduce((sum, company) => sum + Number(company.active_product_count || 0), 0);
+  const visibleGenerics = companies.reduce((sum, company) => sum + Number(company.generic_count || 0), 0);
+
+  return (
+    <main className="container mx-auto max-w-7xl px-4 py-8">
+      <section className="rounded-3xl border bg-card p-6 shadow-sm md:p-8">
+        <p className="flex items-center gap-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          <Network className="h-4 w-4" />
+          {t("Connected healthcare company network", "شبكة شركات الرعاية الصحية المترابطة")}
+        </p>
+        <div className="mt-3 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{t("Company profiles and canonical medicine portfolios", "ملفات الشركات ومحافظ الأدوية الموحدة")}</h1>
+            <p className="mt-3 max-w-4xl text-muted-foreground">{t("Explore separate company profiles generated from the live medicine encyclopedia. Toll manufacturers, direct manufacturers, and trademark owners are modeled as distinct entities, with every relationship linked back to canonical medicine pages. Official company statements remain separately verified and attributed.", "استكشف ملفات شركات منفصلة مولدة من موسوعة الأدوية الحية. يتم تمثيل المصنعين المباشرين والمصنعين لحساب الغير ومالكي العلامات التجارية ككيانات مستقلة، مع ربط كل علاقة بصفحات الأدوية الموحدة. تظل بيانات الشركات الرسمية موثقة ومنسوبة بشكل منفصل.")}</p>
+          </div>
+          <a href="/industry" className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
+            <Building2 className="mr-2 h-4 w-4" />
+            {t("Create or claim a profile", "إنشاء أو المطالبة بملف")}
+          </a>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric label={t("Matching company profiles", "ملفات الشركات المطابقة")} value={total} />
+        <Metric label={t("Official profiles in this page", "الملفات الرسمية في هذه الصفحة")} value={officialCount} />
+        <Metric label={t("Visible portfolio medicines", "أدوية المحافظ الظاهرة")} value={visibleProducts} />
+        <Metric label={t("Visible company-generic links", "روابط الشركات بالمواد الفعالة الظاهرة")} value={visibleGenerics} />
+      </section>
+
+      <div className="mt-6">
+        <ConnectedNextActions contextType="module" contextKey="companies" />
+      </div>
+
+      <section className="mt-6 flex flex-wrap gap-2">
+        <a href="/industry" className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary">
+          {t("Industry contribution network", "شبكة مساهمات الشركات")}
+        </a>
+        <a href="/generics" className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-muted">
+          {t("Browse generics", "تصفح المواد الفعالة")}
+        </a>
+        <a href="/diseases" className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-muted">
+          {t("Browse disease areas", "تصفح المجالات المرضية")}
+        </a>
+        <a href="/medicines" className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-muted">
+          {t("Open medicine encyclopedia", "فتح موسوعة الأدوية")}
+        </a>
+      </section>
+
+      <section className="mt-6 rounded-2xl border bg-card p-5 shadow-sm">
+        <form
+          className="grid gap-3 md:grid-cols-[1fr_auto_auto]"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void load(query, 0, false);
+          }}
+        >
+          <label className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search company, medicine, generic, therapy, origin, or capability...", "ابحث عن شركة أو دواء أو مادة فعالة أو مجال علاجي أو منشأ أو قدرة...")} />
+          </label>
+          <Button type="submit" disabled={loading}>
+            <Search className="mr-2 h-4 w-4" />
+            {t("Search", "بحث")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setQuery("");
+              void load("", 0, false);
+            }}
+            disabled={loading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {t("Reset", "إعادة ضبط")}
+          </Button>
+        </form>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {total.toLocaleString()} {t("company profiles match", "ملف شركة مطابق")}
+          {appliedQuery ? ` · ${t("Search", "البحث")}: ${appliedQuery}` : ""}
+        </p>
+        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+      </section>
+      <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {companies.map((company) => {
+          const imported = company.dataset_metadata?.portfolioImported === true;
+          const roles = relationshipRoles(company);
+          const companyHref = seoEntityPath("company", company.company_slug);
+          const companyDisplayName = company.official_display_name || company.company_name;
+          const logoUrl = company.official_logo_url;
+          const initialLetter = (companyDisplayName.charAt(0) || "C").toUpperCase();
+
+          return (
+            <div
+              key={company.company_slug}
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl dark:bg-card/40"
+            >
+              <div>
+                {/* Header: Logo + Info */}
+                <div className="flex items-start gap-4">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={companyDisplayName}
+                      className="h-14 w-14 flex-shrink-0 rounded-xl border bg-white object-contain p-1.5 shadow-sm transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 via-blue-500/10 to-emerald-500/20 border border-primary/20 font-bold text-primary shadow-inner transition-transform duration-300 group-hover:scale-105">
+                      <span className="text-xl">{initialLetter}</span>
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a href={companyHref} className="hover:underline">
+                        <h2 className="text-lg font-bold leading-tight text-foreground tracking-tight line-clamp-1">
+                          {companyDisplayName}
+                        </h2>
+                      </a>
+                      {company.official_verified && (
+                        <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20">
+                          <BadgeCheck className="h-3.5 w-3.5" />
+                          {t("Official", "رسمي")}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground line-clamp-1">
+                      {company.official_verified
+                        ? humanize(company.official_company_type)
+                        : cleanCompanyOrigin(company.origin) || t("Encyclopedia-derived company", "شركة مشتقة من الموسوعة")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {company.official_description && (
+                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                    {company.official_description}
+                  </p>
+                )}
+
+                {/* Key Metrics Pills */}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                    <Database className="h-3 w-3" />
+                    {Number(company.active_product_count).toLocaleString()} {t("medicines", "دواء")}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    {company.generic_count.toLocaleString()} {t("generics", "مادة فعالة")}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                    {company.disease_area_count.toLocaleString()} {t("therapies", "مجال علاجي")}
+                  </span>
+                </div>
+
+                {/* Relationship Roles */}
+                {roles.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {roles.map((role) => (
+                      <Badge key={role} variant="outline" className="text-[11px] font-medium border-muted-foreground/30">
+                        {medicineCompanyRoleLabel(role, t)} · {relationshipCount(company, role).toLocaleString()}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Therapeutic & Generic highlights */}
+                <div className="mt-3 space-y-1.5 text-xs">
+                  {values(company.therapeutic_areas).length > 0 && (
+                    <p className="text-muted-foreground line-clamp-1">
+                      <span className="font-medium text-foreground">{t("Therapeutics", "العلاج")}:</span>{" "}
+                      {values(company.therapeutic_areas).slice(0, 4).join(", ")}
+                    </p>
+                  )}
+                  {company.min_price != null && company.max_price != null && (
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">{t("Prices", "الأسعار")}:</span>{" "}
+                      {Number(company.min_price).toLocaleString()}–{Number(company.max_price).toLocaleString()} {company.source_currency}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Lower Section with 3 Distinct Action Buttons */}
+              <div className="mt-5 pt-3 border-t border-border/60">
+                <div className="grid grid-cols-3 gap-2">
+                  <a
+                    href={`${companyHref}#about`}
+                    className="inline-flex items-center justify-center rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  >
+                    {t("About", "عن الشركة")}
+                  </a>
+                  <a
+                    href={`${companyHref}#contacts`}
+                    className="inline-flex items-center justify-center rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-600 hover:text-white transition-all duration-200"
+                  >
+                    {t("Contacts", "الاتصال")}
+                  </a>
+                  <a
+                    href={`${companyHref}#products`}
+                    className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white transition-all duration-200"
+                  >
+                    {t("Products", "المنتجات")}
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        })}        {!loading && companies.length === 0 && (
+          <Card>
+            <CardContent className="p-6 text-sm text-muted-foreground">{t("No companies match this search.", "لا توجد شركات مطابقة للبحث.")}</CardContent>
+          </Card>
+        )}
+      </section>
+
+      {companies.length < total && (
+        <div className="mt-6 flex justify-center">
+          <Button variant="outline" disabled={loading} onClick={() => void load(appliedQuery, companies.length, true)}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t("Load more companies", "تحميل المزيد من الشركات")}
+          </Button>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number | string }) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-2xl font-bold">{typeof value === "number" ? value.toLocaleString() : value}</div>
+      </CardContent>
+    </Card>
+  );
+}
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium break-words">{value || "—"}</div>
+    </div>
+  );
+}
