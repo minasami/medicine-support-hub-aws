@@ -6,6 +6,7 @@ import {
   RevenueCatState,
 } from "@/lib/revenuecat-client";
 import { RevenueCatPaywallModal } from "@/components/revenuecat-paywall-modal";
+import { PublicHealthAdBanner } from "@/components/public-health-ad-banner";
 import {
   Heart,
   Shield,
@@ -160,6 +161,13 @@ export default function SponsorPortal() {
             </div>
           </div>
         </div>
+
+        {/* Public Health Sponsor Ad Banner (RevenueCat Hybrid Monetization & Catvertising) */}
+        <PublicHealthAdBanner
+          rcState={rcState}
+          onOpenPaywall={() => handleOpenPaywall("patient_sponsor_monthly")}
+          onStateChange={() => setRcState(revenueCat.getState())}
+        />
 
         {/* Sponsorship Packages Grid */}
         <div className="space-y-4">

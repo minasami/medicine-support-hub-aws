@@ -34,12 +34,14 @@ export const SPONSORSHIP_TIERS: SponsorshipTier[] = [
     impactBadgeAr: "كفالة مريض واحد شهرياً",
     featuresEn: [
       "Direct EDA tariff verified medicine matching",
+      "100% Ad-Free experience (ad_free entitlement)",
       "Monthly donor impact report via email",
       "Verified Donor badge on Medicine Support Hub",
       "7-Day Free Trial available for judges"
     ],
     featuresAr: [
       "توفير أدوية معتمدة وفق تسعيرة هيئة الدواء المصرية",
+      "تجربة خالية تماماً من الإعلانات (ad_free)",
       "تقرير دوري شهري بأثر التبرع",
       "شارة متبرع معتمد على المنصة",
       "فترة تجريبية مجانية لمدة 7 أيام للتحكيم"
@@ -110,6 +112,8 @@ export interface RevenueCatState {
   projectId: string;
   appUserId: string;
   activeEntitlements: string[];
+  isAdFree: boolean;
+  rewardedAdCredits: number;
   lastPurchasedTierId?: string;
 }
 
@@ -145,12 +149,16 @@ class RevenueCatService {
 
   public getState(): RevenueCatState {
     const localSaved = this.getLocalEntitlements();
+    const isAdFree = localSaved.entitlements.includes("ad_free") || localSaved.entitlements.length > 0;
+    const adCredits = typeof window !== "undefined" ? Number(localStorage.getItem("msh_rewarded_ad_credits") || "0") : 0;
     return {
       isConfigured: this.configured,
       isSandbox: true,
       projectId: RC_PROJECT_ID,
       appUserId: this.appUserId,
       activeEntitlements: localSaved.entitlements,
+      isAdFree,
+      rewardedAdCredits: adCredits,
       lastPurchasedTierId: localSaved.lastPurchasedTierId,
     };
   }
@@ -208,9 +216,11 @@ class RevenueCatService {
       }
 
       this.setLocalEntitlement(tier.entitlement, tier.id);
+      this.setLocalEntitlement("ad_free", tier.id);
       return { success: true, entitlement: tier.entitlement };
     } catch {
       this.setLocalEntitlement(tier.entitlement, tier.id);
+      this.setLocalEntitlement("ad_free", tier.id);
       return { success: true, entitlement: tier.entitlement };
     }
   }
@@ -225,15 +235,30 @@ class RevenueCatService {
       this.setLocalEntitlement("patient_sponsor", "patient_sponsor_monthly");
       this.setLocalEntitlement("medicine_angel", "medicine_angel_monthly");
       this.setLocalEntitlement("clinical_pro", "clinical_pro_annual");
+      this.setLocalEntitlement("ad_free", "all_access");
       return {
         success: true,
-        message: "Promo code accepted! Unlocked all Medicine Angel & Clinical Pro entitlements for hackathon evaluation.",
-        unlockedTiers: ["patient_sponsor", "medicine_angel", "clinical_pro"],
+        message: "Promo code accepted! Unlocked all Medicine Angel, Clinical Pro, and Ad-Free entitlements for hackathon evaluation.",
+        unlockedTiers: ["patient_sponsor", "medicine_angel", "clinical_pro", "ad_free"],
       };
     }
     return {
       success: false,
       message: "Invalid promo code. For the RevenueCat hackathon review, use code: SHIPATON2026",
+    };
+  }
+
+  /**
+   * Rewarded Health Ad simulation for Catvertising Award.
+   * Free-tier users view a public health sponsor announcement to earn medicine aid credits.
+   */
+  public recordRewardedAd(): { credits: number; message: string } {
+    if (typeof window === "undefined") return { credits: 0, message: "" };
+    const current = Number(localStorage.getItem("msh_rewarded_ad_credits") || "0") + 1;
+    localStorage.setItem("msh_rewarded_ad_credits", String(current));
+    return {
+      credits: current,
+      message: "Rewarded health message complete! 0.50 EGP contributed to the community medicine aid fund.",
     };
   }
 }
