@@ -230,6 +230,9 @@ importers:
       '@capacitor/share':
         specifier: ^6.0.4
         version: 6.0.4(@capacitor/core@6.2.1)
+      '@revenuecat/purchases-js':
+        specifier: ^1.66.0
+        version: 1.66.0
       barcode-detector:
         specifier: ^3.0.0
         version: 3.2.1
@@ -1338,6 +1341,9 @@ packages:
 
   '@replit/vite-plugin-runtime-error-modal@0.0.6':
     resolution: {integrity: sha512-53iuzLsrvcUnWxAo0fvNrUhOf7LYJ+3at61dZeTIrkaZD4vGNjTbvE0j50TFcjjTC9UM74uprlnQ4+L2A//Cjg==}
+
+  '@revenuecat/purchases-js@1.66.0':
+    resolution: {integrity: sha512-ZT5XMt/huh9SMmRwjHA5qJFfWd9UD/8Fi1EwN5alzQGfPEeHlu98J7iPfWY+ve1YovPL6QjtJ3bsjrs22ksTkw==}
 
   '@rolldown/pluginutils@1.0.0-rc.3':
     resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
@@ -3434,6 +3440,8 @@ snapshots:
   '@replit/vite-plugin-runtime-error-modal@0.0.6':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
+
+  '@revenuecat/purchases-js@1.66.0': {}
 
   '@rolldown/pluginutils@1.0.0-rc.3': {}
 

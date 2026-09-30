@@ -76,6 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/companies", labelEn: "Companies", labelAr: "الشركات" },
     { href: "/marketplace", labelEn: "Marketplace", labelAr: "السوق" },
     { href: "/request", labelEn: "Request", labelAr: "طلب دعم" },
+    { href: "/sponsor", labelEn: "❤️ Sponsor", labelAr: "كفالة مريض" },
     { href: "/aws", labelEn: "☁️ AWS Cloud", labelAr: "سحابة AWS" },
   ];
 

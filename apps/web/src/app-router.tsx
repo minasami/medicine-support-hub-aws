@@ -19,6 +19,7 @@ const MedicineWorldSearch = lazy(
 );
 const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
 const AWSCloudHub = lazy(() => import("@/pages/aws-cloud-hub"));
+const SponsorPortal = lazy(() => import("@/pages/sponsor-portal"));
 const ManufacturerTerms = lazy(() => import("@/pages/manufacturer-terms"));
 const MedicineMarketplace = lazy(() => import("@/pages/medicine-marketplace"));
 const EntityDetail = lazy(() => import("@/pages/entity-detail"));
@@ -204,6 +205,9 @@ export function AppRouter() {
         <Route path="/aws" component={AWSCloudHub} />
         <Route path="/aws-cloud" component={AWSCloudHub} />
         <Route path="/hackathon" component={AWSCloudHub} />
+        <Route path="/sponsor" component={SponsorPortal} />
+        <Route path="/pro" component={SponsorPortal} />
+        <Route path="/revenuecat" component={SponsorPortal} />
         <Route path="/ai" component={AiMcpPage} />
         <Route path="/mcp" component={AiMcpPage} />
         <Route path="/mcp-oauth" component={McpOAuthPage} />

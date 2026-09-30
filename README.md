@@ -9,13 +9,15 @@
 [![Amazon DynamoDB](https://img.shields.io/badge/Amazon-DynamoDB_NoSQL-4053D6?logo=amazondynamodb&logoColor=white)](https://main.d24cynqfuktylf.amplifyapp.com/aws)
 [![Amazon Bedrock](https://img.shields.io/badge/Amazon-Bedrock_AI_Safety-232F3E?logo=amazon&logoColor=white)](https://main.d24cynqfuktylf.amplifyapp.com/aws)
 [![AWS Lambda](https://img.shields.io/badge/AWS-Lambda_Diagnostics-FF9900?logo=awslambda&logoColor=white)](https://btf73widzhd7aboopn2fes66di0nrlnk.lambda-url.us-east-1.on.aws/)
+[![RevenueCat](https://img.shields.io/badge/RevenueCat-In--App_Sponsorships-E75D4C?logo=revenuecat&logoColor=white)](https://main.d24cynqfuktylf.amplifyapp.com/sponsor)
 
 **Digital health infrastructure for medicine access in Egypt & emerging markets.**
 
-> **AWS "Zero to Shipped" Hackathon Deployment:**
+> **Hackathon Deployments:**
 > - 🌐 **Live Demo (AWS Amplify):** [https://main.d24cynqfuktylf.amplifyapp.com](https://main.d24cynqfuktylf.amplifyapp.com)
 > - ☁️ **AWS Cloud Hub & Architecture:** [https://main.d24cynqfuktylf.amplifyapp.com/aws](https://main.d24cynqfuktylf.amplifyapp.com/aws)
 > - 🩺 **Lambda Health Check:** [https://btf73widzhd7aboopn2fes66di0nrlnk.lambda-url.us-east-1.on.aws/](https://btf73widzhd7aboopn2fes66di0nrlnk.lambda-url.us-east-1.on.aws/)
+> - 💳 **RevenueCat Sponsor Portal:** [https://main.d24cynqfuktylf.amplifyapp.com/sponsor](https://main.d24cynqfuktylf.amplifyapp.com/sponsor) *(Judge Promo Code: `SHIPATON2026`)*
 
 Medicine Support Hub is an AI-ready, multi-tenant platform designed to help NGOs, healthcare providers, pharmacies, pharmaceutical companies, donors, suppliers, and public-sector programs coordinate medicine assistance from request to impact.
 
