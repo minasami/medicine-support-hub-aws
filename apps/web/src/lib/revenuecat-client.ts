@@ -1,4 +1,5 @@
 import { Purchases, LogLevel } from "@revenuecat/purchases-js";
+import { EntitlementStore } from "./revenuecat-access.mjs";
 
 export interface SponsorshipTier {
   id: string;
@@ -18,248 +19,203 @@ export interface SponsorshipTier {
   featuresAr: string[];
 }
 
+
 export const SPONSORSHIP_TIERS: SponsorshipTier[] = [
   {
-    id: "patient_sponsor_monthly",
-    identifier: "tier_patient_sponsor",
-    titleEn: "Patient Sponsor",
-    titleAr: "كفيل مريض",
-    descriptionEn: "Covers monthly chronic medication for 1 low-income Egyptian patient",
-    descriptionAr: "كفالة أدوية الأمراض المزمنة لمريض مصري محتاج شهرياً",
-    priceUsd: 4.99,
-    periodEn: "month",
-    periodAr: "شهر",
-    entitlement: "patient_sponsor",
-    impactBadgeEn: "Sponsors 1 Patient / Month",
-    impactBadgeAr: "كفالة مريض واحد شهرياً",
-    featuresEn: [
-      "Direct EDA tariff verified medicine matching",
-      "100% Ad-Free experience (ad_free entitlement)",
-      "Monthly donor impact report via email",
-      "Verified Donor badge on Medicine Support Hub",
-      "7-Day Free Trial available for judges"
+    "id": "patient_sponsor_monthly",
+    "identifier": "tier_patient_sponsor",
+    "titleEn": "Patient Sponsor",
+    "titleAr": "كفيل مريض",
+    "descriptionEn": "Prototype subscription tier. No medicine delivery or treatment outcome is guaranteed.",
+    "descriptionAr": "خطة اشتراك تجريبية. لا تضمن توصيل أدوية أو نتيجة علاجية.",
+    "priceUsd": 4.99,
+    "periodEn": "month",
+    "periodAr": "شهر",
+    "entitlement": "patient_sponsor",
+    "impactBadgeEn": "Prototype · No patient allocation",
+    "impactBadgeAr": "نموذج تجريبي · دون تخصيص مرضى",
+    "featuresEn": [
+      "RevenueCat entitlement status",
+      "Pricing and any trial are confirmed at checkout",
+      "Pharmacy fulfillment and impact reporting are planned"
     ],
-    featuresAr: [
-      "توفير أدوية معتمدة وفق تسعيرة هيئة الدواء المصرية",
-      "تجربة خالية تماماً من الإعلانات (ad_free)",
-      "تقرير دوري شهري بأثر التبرع",
-      "شارة متبرع معتمد على المنصة",
-      "فترة تجريبية مجانية لمدة 7 أيام للتحكيم"
+    "featuresAr": [
+      "حالة صلاحية الاشتراك من RevenueCat",
+      "السعر وأي فترة تجريبية يؤكدان عند الدفع",
+      "تنفيذ الطلبات وتقارير الأثر قيد التخطيط"
+    ],
+    "isPopular": false
+  },
+  {
+    "id": "medicine_angel_monthly",
+    "identifier": "tier_medicine_angel",
+    "titleEn": "Medicine Angel",
+    "titleAr": "ملاك الدواء",
+    "descriptionEn": "Prototype subscription tier. No medicine delivery or treatment outcome is guaranteed.",
+    "descriptionAr": "خطة اشتراك تجريبية. لا تضمن توصيل أدوية أو نتيجة علاجية.",
+    "priceUsd": 14.99,
+    "periodEn": "month",
+    "periodAr": "شهر",
+    "entitlement": "medicine_angel",
+    "isPopular": false,
+    "impactBadgeEn": "Prototype · No patient allocation",
+    "impactBadgeAr": "نموذج تجريبي · دون تخصيص مرضى",
+    "featuresEn": [
+      "RevenueCat entitlement status",
+      "Pricing and any trial are confirmed at checkout",
+      "Pharmacy fulfillment and impact reporting are planned"
+    ],
+    "featuresAr": [
+      "حالة صلاحية الاشتراك من RevenueCat",
+      "السعر وأي فترة تجريبية يؤكدان عند الدفع",
+      "تنفيذ الطلبات وتقارير الأثر قيد التخطيط"
     ]
   },
   {
-    id: "medicine_angel_monthly",
-    identifier: "tier_medicine_angel",
-    titleEn: "Medicine Angel",
-    titleAr: "ملاك الدواء",
-    descriptionEn: "Sponsors complete critical treatment packs (Insulin, Cardiovascular, Blood Thinners)",
-    descriptionAr: "كفالة باقة علاجية حرجة كاملة (أنسولين، أدوية قلب، وسيولة الدم)",
-    priceUsd: 14.99,
-    periodEn: "month",
-    periodAr: "شهر",
-    entitlement: "medicine_angel",
-    isPopular: true,
-    impactBadgeEn: "Maximum Clinical Impact",
-    impactBadgeAr: "أعلى أثر إنساني وطبي",
-    featuresEn: [
-      "Covers 3 chronic disease patients every month",
-      "Full delivery & pharmacy dispatch verification",
-      "Real-time patient aid queue prioritization",
-      "Unlocked access to all Clinical Pro interaction graphs",
-      "VIP recognition in Medicine Support Hub Annual Report"
+    "id": "clinical_pro_annual",
+    "identifier": "tier_clinical_pro_annual",
+    "titleEn": "Annual Healthcare Patron",
+    "titleAr": "راعي الرعاية الصحية السنوي",
+    "descriptionEn": "Prototype subscription tier. No medicine delivery or treatment outcome is guaranteed.",
+    "descriptionAr": "خطة اشتراك تجريبية. لا تضمن توصيل أدوية أو نتيجة علاجية.",
+    "priceUsd": 49.99,
+    "periodEn": "year",
+    "periodAr": "سنة",
+    "entitlement": "clinical_pro",
+    "impactBadgeEn": "Prototype · No patient allocation",
+    "impactBadgeAr": "نموذج تجريبي · دون تخصيص مرضى",
+    "featuresEn": [
+      "RevenueCat entitlement status",
+      "Pricing and any trial are confirmed at checkout",
+      "Pharmacy fulfillment and impact reporting are planned"
     ],
-    featuresAr: [
-      "كفالة 3 مرضى مزمنين كل شهر",
-      "تتبع فوري لتسليم الأدوية من الصيدليات المشاركة",
-      "أولوية قصوى لطلبات المرضى المكفولين",
-      "فتح كامل لرسومات وتحليلات التفاعلات الدوائية",
-      "تكريم خاص في التقرير السنوي للمنصة"
-    ]
-  },
-  {
-    id: "clinical_pro_annual",
-    identifier: "tier_clinical_pro_annual",
-    titleEn: "Annual Healthcare Patron",
-    titleAr: "راعي الرعاية الصحية السنوي",
-    descriptionEn: "Full-year institutional & clinical sponsorship with unlimited provider safety scans",
-    descriptionAr: "رعاية سنوية شاملة مع وصول غير محدود لأدوات السلامة الدوائية",
-    priceUsd: 49.99,
-    periodEn: "year",
-    periodAr: "سنة",
-    entitlement: "clinical_pro",
-    impactBadgeEn: "Save 30% · Year of Impact",
-    impactBadgeAr: "وفر 30% · عام كامل من العطاء",
-    featuresEn: [
-      "Directly funds 15+ chronic prescriptions annually",
-      "Unlimited Bedrock AI multi-drug contraindication scans",
-      "Exportable CSV reports of 17,000+ EDA monographs",
-      "Direct API access to national generic equivalence mapping",
-      "Priority clinical support for NGO partners"
+    "featuresAr": [
+      "حالة صلاحية الاشتراك من RevenueCat",
+      "السعر وأي فترة تجريبية يؤكدان عند الدفع",
+      "تنفيذ الطلبات وتقارير الأثر قيد التخطيط"
     ],
-    featuresAr: [
-      "تمويل أكثر من 15 روشتة مزمنة سنوياً",
-      "فحص غير محدود للتفاعلات الدوائية عبر Bedrock AI",
-      "تصدير تقارير وبيانات 17,000 دواء مصري",
-      "واجهة برمجية للبحث عن البدائل والمكافئات الحيوية",
-      "دعم فني وطبي مخصص لفرق الجمعيات الخيرية"
-    ]
+    "isPopular": false
   }
 ];
 
 export interface RevenueCatState {
   isConfigured: boolean;
   isSandbox: boolean;
+  environment: "unknown" | "sandbox" | "production" | "mixed";
   projectId: string;
   appUserId: string;
   activeEntitlements: string[];
+  demoEntitlements: string[];
   isAdFree: boolean;
   rewardedAdCredits: number;
-  lastPurchasedTierId?: string;
+  checkoutEnabled: boolean;
+  error?: string;
 }
 
-export const RC_PROJECT_ID = (import.meta as any).env?.VITE_REVENUECAT_PROJECT_ID || "proj8b481083";
-const LOCAL_STORAGE_KEY = "msh_revenuecat_demo_entitlements";
-const RC_PUBLIC_KEY = (import.meta as any).env?.VITE_REVENUECAT_PUBLIC_API_KEY || "rcb_test_msh_shipaton_2026";
+const env = import.meta.env;
+export const RC_PROJECT_ID = env.VITE_REVENUECAT_PROJECT_ID || "proj8b481083";
 
 class RevenueCatService {
   private client: Purchases | null = null;
-  private configured = false;
-  private appUserId = "anonymous-patient-" + Math.floor(100000 + Math.random() * 900000);
+  private access = new EntitlementStore(null);
+  private appUserId = "";
+  private demoEntitlements: string[] = [];
+  private demoViews = 0;
+  private error: string | undefined;
+  private listeners = new Set<() => void>();
+  private checkoutEnabled = env.VITE_REVENUECAT_CHECKOUT_ENABLED === "true";
 
   constructor() {
-    this.init();
+    if (typeof window === "undefined") return;
+    try {
+      // Persist identity only. Never restore access from browser storage.
+      const identityKey = "msh_rc_anonymous_user_v1";
+      this.appUserId = localStorage.getItem(identityKey) || crypto.randomUUID();
+      localStorage.setItem(identityKey, this.appUserId);
+      localStorage.removeItem("msh_revenuecat_demo_entitlements");
+      localStorage.removeItem("msh_rewarded_ad_credits");
+      const apiKey = env.VITE_REVENUECAT_PUBLIC_API_KEY;
+      if (!apiKey || apiKey === "rcb_test_msh_shipaton_2026") {
+        throw new Error("Subscription service is not configured. Demo preview remains available.");
+      }
+      Purchases.setLogLevel(LogLevel.Warn);
+      this.client = Purchases.configure({ apiKey, appUserId: this.appUserId });
+      this.access = new EntitlementStore(this.client);
+    } catch {
+      this.error = "Subscription service is unavailable. No paid access has been granted.";
+    }
   }
 
-  private async init() {
-    try {
-      if (typeof window === "undefined") return;
-
-      Purchases.setLogLevel(LogLevel.Debug);
-      this.client = Purchases.configure({
-        apiKey: RC_PUBLIC_KEY,
-        appUserId: this.appUserId,
-      });
-      this.configured = true;
-    } catch {
-      // In sandbox preview / test environments without network access to RevenueCat API,
-      // fallback gracefully to our compliant local subscriber state.
-      this.configured = true;
-    }
+  private emit() { this.listeners.forEach(listener => listener()); }
+  public subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
   }
 
   public getState(): RevenueCatState {
-    const localSaved = this.getLocalEntitlements();
-    const isAdFree = localSaved.entitlements.includes("ad_free") || localSaved.entitlements.length > 0;
-    const adCredits = typeof window !== "undefined" ? Number(localStorage.getItem("msh_rewarded_ad_credits") || "0") : 0;
+    const active = this.access.snapshot();
+    const entries = Object.values(active);
+    const sandbox = entries.filter(entry => entry.isSandbox).length;
+    const environment = !entries.length ? "unknown" :
+      sandbox === entries.length ? "sandbox" : sandbox === 0 ? "production" : "mixed";
     return {
-      isConfigured: this.configured,
-      isSandbox: true,
+      isConfigured: this.client !== null,
+      isSandbox: environment === "sandbox",
+      environment,
       projectId: RC_PROJECT_ID,
       appUserId: this.appUserId,
-      activeEntitlements: localSaved.entitlements,
-      isAdFree,
-      rewardedAdCredits: adCredits,
-      lastPurchasedTierId: localSaved.lastPurchasedTierId,
+      activeEntitlements: Object.keys(active),
+      demoEntitlements: [...this.demoEntitlements],
+      isAdFree: Object.hasOwn(active, "ad_free"),
+      rewardedAdCredits: this.demoViews,
+      checkoutEnabled: this.checkoutEnabled && this.client !== null,
+      error: this.error,
     };
   }
 
-  public getLocalEntitlements(): { entitlements: string[]; lastPurchasedTierId?: string } {
-    if (typeof window === "undefined") return { entitlements: [] };
+  public async refresh(): Promise<void> {
     try {
-      const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (data) {
-        return JSON.parse(data);
-      }
+      await this.access.refresh();
+      this.error = undefined;
     } catch {
-      // ignore
+      this.error = "Unable to verify subscription access. Please retry.";
     }
-    return { entitlements: [] };
+    this.emit();
   }
 
-  public setLocalEntitlement(entitlement: string, tierId: string) {
-    if (typeof window === "undefined") return;
-    const current = this.getLocalEntitlements();
-    const newEntitlements = Array.from(new Set([...current.entitlements, entitlement]));
-    localStorage.setItem(
-      LOCAL_STORAGE_KEY,
-      JSON.stringify({
-        entitlements: newEntitlements,
-        lastPurchasedTierId: tierId,
-        updatedAt: new Date().toISOString(),
-      })
-    );
+  public async purchaseTier(tier: SponsorshipTier): Promise<{ success: boolean; entitlement: string }> {
+    if (!this.checkoutEnabled) throw new Error("Checkout is disabled for this prototype.");
+    try {
+      const result = await this.access.purchase(tier);
+      this.error = undefined;
+      return result;
+    } catch {
+      this.error = "Checkout was cancelled or could not be verified. No new access was granted. Refresh before retrying.";
+      throw new Error(this.error);
+    } finally {
+      this.emit();
+    }
+  }
+
+  public redeemPromoCode(code: string): { success: boolean; message: string } {
+    if (code.trim().toUpperCase() !== "SHIPATON2026") {
+      return { success: false, message: "Unknown demo code." };
+    }
+    this.demoEntitlements = ["patient_sponsor", "medicine_angel", "clinical_pro", "ad_free"];
+    this.emit();
+    return { success: true, message: "Demo preview enabled. No purchase, trial, paid access, donation or patient allocation was created." };
   }
 
   public clearEntitlements() {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    this.demoEntitlements = [];
+    this.demoViews = 0;
+    this.emit();
   }
 
-  /**
-   * Purchases a tier via RevenueCat. If in demo or testing mode,
-   * simulates a successful purchase flow and persists active entitlements.
-   */
-  public async purchaseTier(tier: SponsorshipTier): Promise<{ success: boolean; entitlement: string }> {
-    try {
-      if (this.client && Purchases.isConfigured()) {
-        try {
-          const offerings = await this.client.getOfferings();
-          const pkg = offerings.current?.availablePackages.find(
-            (p: any) => p.identifier === tier.identifier || p.identifier.includes(tier.id)
-          );
-          if (pkg) {
-            await this.client.purchasePackage(pkg);
-          }
-        } catch {
-          // If live store checkout is in simulated/sandbox mode, complete safely
-        }
-      }
-
-      this.setLocalEntitlement(tier.entitlement, tier.id);
-      this.setLocalEntitlement("ad_free", tier.id);
-      return { success: true, entitlement: tier.entitlement };
-    } catch {
-      this.setLocalEntitlement(tier.entitlement, tier.id);
-      this.setLocalEntitlement("ad_free", tier.id);
-      return { success: true, entitlement: tier.entitlement };
-    }
-  }
-
-  /**
-   * Judge / Reviewer Promo Code verification for the hackathon.
-   * Judges can enter SHIPATON2026, DEVPOST, or NEXTGEN to unlock all tiers.
-   */
-  public redeemPromoCode(code: string): { success: boolean; message: string; unlockedTiers?: string[] } {
-    const clean = code.trim().toUpperCase();
-    if (clean === "SHIPATON2026" || clean === "DEVPOST" || clean === "NEXTGEN" || clean === "REVENUECAT") {
-      this.setLocalEntitlement("patient_sponsor", "patient_sponsor_monthly");
-      this.setLocalEntitlement("medicine_angel", "medicine_angel_monthly");
-      this.setLocalEntitlement("clinical_pro", "clinical_pro_annual");
-      this.setLocalEntitlement("ad_free", "all_access");
-      return {
-        success: true,
-        message: "Promo code accepted! Unlocked all Medicine Angel, Clinical Pro, and Ad-Free entitlements for hackathon evaluation.",
-        unlockedTiers: ["patient_sponsor", "medicine_angel", "clinical_pro", "ad_free"],
-      };
-    }
-    return {
-      success: false,
-      message: "Invalid promo code. For the RevenueCat hackathon review, use code: SHIPATON2026",
-    };
-  }
-
-  /**
-   * Rewarded Health Ad simulation for Catvertising Award.
-   * Free-tier users view a public health sponsor announcement to earn medicine aid credits.
-   */
   public recordRewardedAd(): { credits: number; message: string } {
-    if (typeof window === "undefined") return { credits: 0, message: "" };
-    const current = Number(localStorage.getItem("msh_rewarded_ad_credits") || "0") + 1;
-    localStorage.setItem("msh_rewarded_ad_credits", String(current));
-    return {
-      credits: current,
-      message: "Rewarded health message complete! 0.50 EGP contributed to the community medicine aid fund.",
-    };
+    this.demoViews += 1;
+    this.emit();
+    return { credits: this.demoViews, message: "Demo message viewed. No ad revenue, donation or monetary credit was generated." };
   }
 }
 
