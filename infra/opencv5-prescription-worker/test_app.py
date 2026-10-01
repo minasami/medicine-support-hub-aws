@@ -137,6 +137,33 @@ class OpenCv5WorkerTests(unittest.TestCase):
         self.assertNotIn("AuthType: NONE", template)
         self.assertNotIn("Principal: '*'", template)
 
+    def test_infrastructure_uses_named_bounded_role_and_retained_repository(self) -> None:
+        template_path = Path(__file__).parent / "template.yaml"
+        template = template_path.read_text(encoding="utf-8")
+        bootstrap = (template_path.parent / "ecr-bootstrap.yaml").read_text(encoding="utf-8")
+        repository_resource = (
+            "WorkerImageRepository:\n"
+            "    Type: AWS::ECR::Repository\n"
+            "    DeletionPolicy: Retain\n"
+            "    Properties:\n"
+            "      RepositoryName: opencv-worker-test"
+        )
+
+        self.assertIn(repository_resource, template)
+        self.assertIn(repository_resource, bootstrap)
+        self.assertNotIn("EmptyOnDelete", template + bootstrap)
+        self.assertIn("RoleName: opencv-worker-test-exec", template)
+        self.assertIn("Service: lambda.amazonaws.com", template)
+        self.assertIn(
+            "PermissionsBoundary: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/opencv-worker-test-lambda-boundary",
+            template,
+        )
+        self.assertIn("Role: !GetAtt WorkerExecutionRole.Arn", template)
+        self.assertIn("FunctionName: opencv-worker-test", template)
+        self.assertIn("Action: logs:CreateLogGroup", template)
+        self.assertIn("- logs:CreateLogStream", template)
+        self.assertIn("- logs:PutLogEvents", template)
+
 
 if __name__ == "__main__":
     unittest.main()

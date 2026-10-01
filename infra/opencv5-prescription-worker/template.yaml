@@ -3,10 +3,46 @@ Transform: AWS::Serverless-2016-10-31
 Description: Optional OpenCV 5 image preprocessing worker; no image persistence.
 
 Resources:
+  WorkerImageRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: opencv-worker-test
+
+  WorkerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: opencv-worker-test-exec
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      PermissionsBoundary: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/opencv-worker-test-lambda-boundary
+      Policies:
+        - PolicyName: opencv-worker-test-logging
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CreateOnlyTheWorkerFunctionLogGroup
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/opencv-worker-test
+              - Sid: WriteOnlyToStreamsInTheWorkerFunctionLogGroup
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/opencv-worker-test:log-stream:*
+
   PrescriptionVisionWorker:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: opencv-worker-test
       PackageType: Image
+      Role: !GetAtt WorkerExecutionRole.Arn
       Architectures:
         - x86_64
       MemorySize: 2048
@@ -28,3 +64,6 @@ Outputs:
   AuthenticatedWorkerUrl:
     Description: Function URL requires AWS Signature Version 4 and AWS IAM authorization.
     Value: !GetAtt PrescriptionVisionWorkerUrl.FunctionUrl
+  WorkerImageRepositoryUri:
+    Description: Stack-owned ECR repository used by the explicit SAM image-repository mapping.
+    Value: !GetAtt WorkerImageRepository.RepositoryUri
