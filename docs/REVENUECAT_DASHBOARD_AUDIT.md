@@ -37,3 +37,16 @@ Existing Test Store resources should remain intact. A native Test Store route wo
 - At audit time the public repository's main branch has no root license file and GitHub reports no detected license. The package metadata says MIT, but that is not a substitute for a repository license file. Confirm the intended license and attribution before adding one.
 - OneSignal award evidence needs an actual deployed campaign, not the local notification preview. No campaign was sent during this work.
 - PR #4 remains a draft; no merge or production deployment was performed.
+
+## October 1 follow-up
+
+Rechecked the signed-in Web page on October 1, 2026: it still shows no web providers and the same permission restriction. Checkout remains unverified; this follow-up did not change provider settings or perform a purchase.
+
+The organizer's [deadline extension announcement](https://revenuecat-shipaton-2026.devpost.com/updates) confirms submissions close October 1, 2026 at noon Pacific daylight time (19:00 UTC / 22:00 Cairo). The rules page still contains older dates in its body. Do not assume this announcement waives category, platform, licensing, SDK, or award requirements.
+
+Immediate order of work:
+1. Project owner resolves the Web configuration restriction and sets up the sandbox provider.
+2. Complete the package/entitlement mapping and sandbox verification sequence above.
+3. Resolve the repository license and Next Gen eligibility evidence; prepare a public demo under two minutes using only verified features.
+4. Review PR #4 for merge/deployment separately. Do not claim the draft changes are live.
+5. Finalize the submission before the extended deadline. Claim OneSignal award requirements only after actual deployment evidence exists.
