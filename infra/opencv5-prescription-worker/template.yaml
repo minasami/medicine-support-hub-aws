@@ -9,6 +9,12 @@ Resources:
     Properties:
       RepositoryName: opencv-worker-test
 
+  WorkerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/opencv-worker-test
+      RetentionInDays: 7
+
   WorkerExecutionRole:
     Type: AWS::IAM::Role
     Properties:
