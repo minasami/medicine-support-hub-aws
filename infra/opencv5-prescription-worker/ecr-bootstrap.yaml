@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Initial repository-only stage for the OpenCV worker stack.
+
+Resources:
+  WorkerImageRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: opencv-worker-test
+
+Outputs:
+  WorkerImageRepositoryUri:
+    Description: Stack-owned ECR repository for the later SAM image deployment.
+    Value: !GetAtt WorkerImageRepository.RepositoryUri

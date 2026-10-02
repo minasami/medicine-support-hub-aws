@@ -3,6 +3,9 @@
   "version": "3.0.0",
   "type": "module",
   "main": "src/main.js",
+  "scripts": {
+    "test": "node --test test/opencv-bridge.test.mjs"
+  },
   "dependencies": {
     "node-appwrite": "^14.2.0",
     "zod": "^3.23.8"

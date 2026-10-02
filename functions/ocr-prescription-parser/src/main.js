@@ -11,7 +11,8 @@
  *
  * MedGemma / Document AI stub when GCP secrets missing.
  */
-import { Client, Databases, ID, Query, Storage } from "node-appwrite";
+import { createHash, createHmac } from "node:crypto";
+import { Account, Client, Databases, ID, Query, Storage } from "node-appwrite";
 import { z } from "zod";
 
 const DB = process.env.APPWRITE_DATABASE_ID || "medicine_support_hub";
@@ -21,6 +22,7 @@ const COL_ITEMS = "prescription_items";
 const COL_TRUST = process.env.USER_TRUST_COLLECTION_ID || "user_trust";
 const COL_PROFILES = process.env.USER_PROFILES_COLLECTION_ID || "user_profiles";
 const BUCKET = process.env.APPWRITE_RX_BUCKET || "prescription-images";
+const MAX_WORKER_IMAGE_BYTES = 4 * 1024 * 1024;
 const CONFIDENCE_THRESHOLD = Number(process.env.OCR_CONFIDENCE_THRESHOLD || 0.8);
 const RLAIF_ASSIGN = Number(process.env.RLAIF_ASSIGN_COUNT || 3);
 const RLAIF_TRUST_MIN = Number(process.env.RLAIF_TRUST_MIN || 50);
@@ -29,10 +31,9 @@ const DISCLAIMER = "AI assistive only. Licensed pharmacist must verify.";
 
 const InputSchema = z
   .object({
-    imageId: z.string().optional(),
-    image_id: z.string().optional(),
-    user_id: z.string().optional(),
-    userId: z.string().optional(),
+    action: z.enum(["preprocess"]).optional(),
+    imageId: z.string().max(36).regex(/^[A-Za-z0-9._-]+$/).optional(),
+    image_id: z.string().max(36).regex(/^[A-Za-z0-9._-]+$/).optional(),
     text: z.string().optional(),
     ocr_text: z.string().optional(),
     image_url: z.string().optional(),
@@ -41,8 +42,10 @@ const InputSchema = z
     image: z.string().optional(),
     data: z.string().optional(),
     image_crop_id: z.string().optional(),
+    ocr_source: z.string().optional(),
+    kind: z.string().optional(),
   })
-  .passthrough();
+  .strip();
 
 function json(res, status, body) {
   return res.json(body, status, {
@@ -74,14 +77,140 @@ function medgemmaConfigured() {
   );
 }
 
-function getClient() {
-  const endpoint =
-    process.env.APPWRITE_FUNCTION_API_ENDPOINT || process.env.APPWRITE_ENDPOINT;
-  const project =
-    process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
-  const key = process.env.APPWRITE_API_KEY || process.env.APPWRITE_FUNCTION_API_KEY;
+function getClient(env = process.env, ClientCtor = Client) {
+  const endpoint = env.APPWRITE_FUNCTION_API_ENDPOINT || env.APPWRITE_ENDPOINT;
+  const project = env.APPWRITE_FUNCTION_PROJECT_ID || env.APPWRITE_PROJECT_ID;
+  const key = env.APPWRITE_API_KEY || env.APPWRITE_FUNCTION_API_KEY;
   if (!endpoint || !project || !key) return null;
-  return new Client().setEndpoint(endpoint).setProject(project).setKey(key);
+  return new ClientCtor().setEndpoint(endpoint).setProject(project).setKey(key);
+}
+
+function isOwnedPrescriptionFile(file, userId) {
+  if (!file || !Array.isArray(file.$permissions) || !userId) return false;
+  return (
+    file.$permissions.includes(`read("user:${userId}")`) &&
+    file.$permissions.includes(`delete("user:${userId}")`)
+  );
+}
+
+function isOpenCvBridgeEnabled(env) {
+  return String(env.OPENCV5_PRESCRIPTION_VISION_ENABLED || "").toLowerCase() === "true";
+}
+
+export function signOpenCvWorkerRequest({
+  workerUrl,
+  body,
+  region,
+  accessKeyId,
+  secretAccessKey,
+  sessionToken,
+  now = new Date(),
+}) {
+  const target = new URL(workerUrl);
+  const hostRegion = target.hostname.match(/^[a-z0-9-]+\.lambda-url\.([a-z0-9-]+)\.on\.aws$/i)?.[1];
+  if (
+    target.protocol !== "https:" ||
+    target.username ||
+    target.password ||
+    target.port ||
+    target.pathname !== "/" ||
+    target.search ||
+    target.hash ||
+    !hostRegion ||
+    hostRegion !== region ||
+    !region ||
+    !accessKeyId ||
+    !secretAccessKey
+  ) {
+    throw new Error("worker_configuration_invalid");
+  }
+
+  const payloadHash = createHash("sha256").update(body, "utf8").digest("hex");
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+  const headers = {
+    "content-type": "application/json",
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate,
+  };
+  if (sessionToken) headers["x-amz-security-token"] = sessionToken;
+
+  const signedHeaderNames = [...Object.keys(headers), "host"].sort();
+  const canonicalHeaders = signedHeaderNames
+    .map((name) => `${name}:${name === "host" ? target.host : headers[name]}\n`)
+    .join("");
+  const signedHeaders = signedHeaderNames.join(";");
+  const canonicalRequest = [
+    "POST",
+    target.pathname,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join("\n");
+  const scope = `${dateStamp}/${region}/lambda/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    scope,
+    createHash("sha256").update(canonicalRequest, "utf8").digest("hex"),
+  ].join("\n");
+  const hmac = (key, value) => createHmac("sha256", key).update(value, "utf8").digest();
+  const dateKey = hmac(`AWS4${secretAccessKey}`, dateStamp);
+  const regionKey = hmac(dateKey, region);
+  const serviceKey = hmac(regionKey, "lambda");
+  const signingKey = hmac(serviceKey, "aws4_request");
+  const signature = createHmac("sha256", signingKey).update(stringToSign, "utf8").digest("hex");
+  headers.authorization =
+    `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${scope}, ` +
+    `SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  return { url: target.toString(), headers };
+}
+
+async function callOpenCvWorker(imageBytes, env, fetchImpl, now) {
+  if (imageBytes.length === 0 || imageBytes.length > MAX_WORKER_IMAGE_BYTES) {
+    throw new Error("worker_image_size_invalid");
+  }
+  const body = JSON.stringify({ image_base64: imageBytes.toString("base64") });
+  const signed = signOpenCvWorkerRequest({
+    workerUrl: env.OPENCV5_WORKER_URL,
+    body,
+    region: env.AWS_REGION,
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+    sessionToken: env.AWS_SESSION_TOKEN,
+    now: now || new Date(),
+  });
+  const response = await fetchImpl(signed.url, {
+    method: "POST",
+    headers: signed.headers,
+    body,
+    redirect: "error",
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error("worker_invocation_failed");
+
+  const result = await response.json();
+  if (
+    result?.ok !== true ||
+    result?.mime_type !== "image/jpeg" ||
+    typeof result?.preprocessed_image_base64 !== "string"
+  ) {
+    throw new Error("worker_response_invalid");
+  }
+  const processedBytes = Buffer.from(result.preprocessed_image_base64, "base64");
+  if (
+    processedBytes.length === 0 ||
+    processedBytes.length > MAX_WORKER_IMAGE_BYTES ||
+    processedBytes.toString("base64") !== result.preprocessed_image_base64
+  ) {
+    throw new Error("worker_response_invalid");
+  }
+  return {
+    mime_type: "image/jpeg",
+    preprocessed_image_base64: result.preprocessed_image_base64,
+    analysis: result.analysis && typeof result.analysis === "object" ? result.analysis : {},
+  };
 }
 
 function buildPharmacistPrompt(rawText) {
@@ -324,7 +453,15 @@ async function persistPrescription(db, { userId, imageId, medicines, source }, l
   return { prescription_id: rx.$id, item_ids: itemIds, confidence_score: avg };
 }
 
-export default async ({ req, res, log, error }) => {
+export function createOcrHandler(injected = {}) {
+  const ClientCtor = injected.Client || Client;
+  const AccountCtor = injected.Account || Account;
+  const DatabasesCtor = injected.Databases || Databases;
+  const StorageCtor = injected.Storage || Storage;
+  const env = injected.env || process.env;
+  const fetchImpl = injected.fetch || globalThis.fetch;
+
+  return async ({ req, res, log, error }) => {
   if (req.method === "OPTIONS") return json(res, 204, {});
   log("OCR Prescription Parser v3 triggered.");
 
@@ -340,8 +477,47 @@ export default async ({ req, res, log, error }) => {
       });
     }
     const payload = checked.data;
+    const headers = req.headers || {};
+    const userJwt = headers["x-appwrite-user-jwt"] || headers["x-appwrite-jwt"];
+    if (!userJwt) {
+      return json(res, 401, {
+        success: false,
+        error: "Unauthorized: Missing session JWT",
+        disclaimer: DISCLAIMER,
+      });
+    }
+
+    const endpoint = env.APPWRITE_FUNCTION_API_ENDPOINT || env.APPWRITE_ENDPOINT;
+    const project = env.APPWRITE_FUNCTION_PROJECT_ID || env.APPWRITE_PROJECT_ID;
+    if (!endpoint || !project) {
+      error("OCR function is missing Appwrite endpoint or project configuration.");
+      return json(res, 500, {
+        success: false,
+        error: "Server authentication configuration is unavailable",
+        disclaimer: DISCLAIMER,
+      });
+    }
+    const userClient = new ClientCtor().setEndpoint(endpoint).setProject(project).setJWT(userJwt);
+    let caller;
+    try {
+      caller = await new AccountCtor(userClient).get();
+    } catch {
+      return json(res, 401, {
+        success: false,
+        error: "Unauthorized: Invalid or expired session",
+        disclaimer: DISCLAIMER,
+      });
+    }
+    const userId = typeof caller?.$id === "string" ? caller.$id : "";
+    if (!userId) {
+      return json(res, 401, {
+        success: false,
+        error: "Unauthorized: Invalid or expired session",
+        disclaimer: DISCLAIMER,
+      });
+    }
+
     const imageId = payload.imageId || payload.image_id || "";
-    const userId = payload.user_id || payload.userId || "";
     let text = String(payload.text || payload.ocr_text || "").trim();
     const imageUrl = payload.image_url || payload.url || "";
     const base64Data = payload.image_base64 || payload.image || payload.data || "";
@@ -354,20 +530,78 @@ export default async ({ req, res, log, error }) => {
       });
     }
 
-    const client = getClient();
-    const db = client ? new Databases(client) : null;
-    const storage = client ? new Storage(client) : null;
-
-    if (!text && imageId && storage) {
+    const bucketId = env.APPWRITE_RX_BUCKET || BUCKET;
+    const userStorage = new StorageCtor(userClient);
+    let imageMeta = null;
+    if (imageId) {
       try {
-        const meta = await storage.getFile(BUCKET, imageId);
-        // Without Document AI we cannot OCR bytes; seed stub text from filename for pipeline continuity.
-        text = `Prescription image ${meta.name || imageId}`;
-        log(`imageId=${imageId} → stub OCR seed from filename (Document AI not wired)`);
-      } catch (e) {
-        log(`storage.getFile: ${e.message || e}`);
-        text = `Prescription image ${imageId}`;
+        imageMeta = await userStorage.getFile(bucketId, imageId);
+      } catch {
+        return json(res, 403, {
+          success: false,
+          error: "Forbidden: Prescription image is not owned by this account",
+          disclaimer: DISCLAIMER,
+        });
       }
+      if (!isOwnedPrescriptionFile(imageMeta, userId)) {
+        return json(res, 403, {
+          success: false,
+          error: "Forbidden: Prescription image is not owned by this account",
+          disclaimer: DISCLAIMER,
+        });
+      }
+    }
+
+    if (payload.action === "preprocess") {
+      if (!isOpenCvBridgeEnabled(env)) {
+        return json(res, 200, {
+          success: true,
+          preprocessing: { enabled: false, applied: false },
+        });
+      }
+
+      const mimeType = String(imageMeta?.mimeType || "").toLowerCase();
+      const declaredSize = Number(imageMeta?.sizeOriginal);
+      if (
+        !["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(mimeType) ||
+        !Number.isFinite(declaredSize) ||
+        declaredSize <= 0 ||
+        declaredSize > MAX_WORKER_IMAGE_BYTES
+      ) {
+        return json(res, 200, {
+          success: true,
+          preprocessing: { enabled: true, applied: false, fallback: "original" },
+        });
+      }
+
+      try {
+        const originalBytes = Buffer.from(await userStorage.getFileDownload(bucketId, imageId));
+        const processed = await callOpenCvWorker(
+          originalBytes,
+          env,
+          fetchImpl,
+          injected.now ? injected.now() : new Date(),
+        );
+        return json(res, 200, {
+          success: true,
+          preprocessing: { enabled: true, applied: true, ...processed },
+        });
+      } catch {
+        log("OpenCV preprocessing unavailable; retaining the original upload for local OCR.");
+        return json(res, 200, {
+          success: true,
+          preprocessing: { enabled: true, applied: false, fallback: "original" },
+        });
+      }
+    }
+
+    const client = getClient(env, ClientCtor);
+    const db = client ? new DatabasesCtor(client) : null;
+
+    if (!text && imageId) {
+      // Preserve the pre-existing fallback when no server OCR provider is configured.
+      text = `Prescription image ${imageMeta?.name || imageId}`;
+      log(`imageId=${imageId} → stub OCR seed from filename (Document AI not wired)`);
     }
 
     if (!text && (imageUrl || base64Data)) {
@@ -475,4 +709,7 @@ export default async ({ req, res, log, error }) => {
       disclaimer: DISCLAIMER,
     });
   }
-};
+  };
+}
+
+export default createOcrHandler();

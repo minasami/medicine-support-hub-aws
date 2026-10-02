@@ -16,9 +16,10 @@ import { ScanModeTabs, type ScanMode } from "@/components/scan/scan-mode-tabs";
 import { DocumentCapture } from "@/components/scan/document-capture";
 import { claimPacketText, parseInvoiceText, type InvoiceDraft } from "@/lib/parse-invoice";
 import { account, functions, storage } from "@/lib/appwrite";
-import { ExecutionMethod, ID } from "appwrite";
+import { ExecutionMethod, ID, Permission, Role } from "appwrite";
 import { OcrAiDisclaimer } from "@/components/ocr-ai-disclaimer";
 import { recognizeTextFromFile } from "@/lib/native-mlkit-text";
+import { preprocessPrescriptionImage } from "@/lib/prescription-image-preprocessing";
 
 const BUCKET = import.meta.env.VITE_APPWRITE_RX_BUCKET || "prescription-images";
 
@@ -101,9 +102,13 @@ export default function BarcodeScanPage() {
       let user;
       try { user = await account.get(); }
       catch { navigate(`/patient-auth?next=${encodeURIComponent("/scan?mode=rx")}`); return; }
-      const deviceText = await recognizeTextFromFile(file);
-      const uploaded = await storage.createFile(BUCKET, ID.unique(), file);
-      const exec = await functions.createExecution("ocr-prescription-parser", JSON.stringify({ imageId: uploaded.$id, user_id: user.$id, text: deviceText || undefined }), false, "/", ExecutionMethod.POST);
+      const uploaded = await storage.createFile(BUCKET, ID.unique(), file, [
+        Permission.read(Role.user(user.$id)),
+        Permission.delete(Role.user(user.$id)),
+      ]);
+      const ocrFile = await preprocessPrescriptionImage(file, uploaded.$id);
+      const deviceText = await recognizeTextFromFile(ocrFile);
+      const exec = await functions.createExecution("ocr-prescription-parser", JSON.stringify({ imageId: uploaded.$id, text: deviceText || undefined }), false, "/", ExecutionMethod.POST);
       const data = JSON.parse(exec.responseBody || "{}");
       if (data.prescription_id) { navigate(`/prescription/review/${data.prescription_id}`); return; }
       if (!data.success) throw new Error(data.error || "Parse failed");
@@ -122,8 +127,11 @@ export default function BarcodeScanPage() {
       const deviceText = await recognizeTextFromFile(file);
       let raw = invText || deviceText || "";
       try {
-        const uploaded = await storage.createFile(BUCKET, ID.unique(), file);
-        const exec = await functions.createExecution("ocr-prescription-parser", JSON.stringify({ imageId: uploaded.$id, user_id: userId || undefined, kind: "invoice", text: invText || deviceText || undefined }), false, "/", ExecutionMethod.POST);
+        const permissions = userId
+          ? [Permission.read(Role.user(userId)), Permission.delete(Role.user(userId))]
+          : undefined;
+        const uploaded = await storage.createFile(BUCKET, ID.unique(), file, permissions);
+        const exec = await functions.createExecution("ocr-prescription-parser", JSON.stringify({ imageId: uploaded.$id, kind: "invoice", text: invText || deviceText || undefined }), false, "/", ExecutionMethod.POST);
         const data = JSON.parse(exec.responseBody || "{}");
         raw = data.raw_text || data.text || raw || file.name;
       } catch { raw = raw || file.name; }
