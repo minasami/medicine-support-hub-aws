@@ -3,12 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: Optional OpenCV 5 image preprocessing worker; no image persistence.
 
 Resources:
-  WorkerImageRepository:
-    Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: opencv-worker-test
-
   WorkerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -70,6 +64,3 @@ Outputs:
   AuthenticatedWorkerUrl:
     Description: Function URL requires AWS Signature Version 4 and AWS IAM authorization.
     Value: !GetAtt PrescriptionVisionWorkerUrl.FunctionUrl
-  WorkerImageRepositoryUri:
-    Description: Stack-owned ECR repository used by the explicit SAM image-repository mapping.
-    Value: !GetAtt WorkerImageRepository.RepositoryUri

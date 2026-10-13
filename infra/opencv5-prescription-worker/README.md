@@ -23,46 +23,91 @@ docker build -t opencv5-prescription-worker .
 
 ## Opt-in worker deployment (not performed)
 
-No AWS resources are created by this repository change. Deployment is deliberately a separate, owner-operated step and may incur AWS charges for Lambda execution, container-image storage, and network transfer. Do not deploy without separate review and authorization.
+No AWS resources are created by this repository change. The worker stack consumes the **pre-created external** ECR repository `opencv-worker-test`; it does not declare or own an ECR resource. The review-only CloudFormation change set is a separate, owner-operated step and must not be executed. Any eventual deployment may incur charges for Lambda execution, container-image storage, and network transfer.
 
-The approved permissions proposal names the stack, ECR repository, and function `opencv-worker-test`; the Lambda execution role `opencv-worker-test-exec`; and the customer-managed permissions boundary `opencv-worker-test-lambda-boundary`. Prepare the deployment and CloudFormation service roles and the boundary policy separately under the approved proposal before using these commands. The proposal's IAM JSON is scoped to `us-east-1`; use that region unless the owner first revises the IAM policies. The template itself uses CloudFormation account, partition, and region pseudo-parameters rather than embedding an account ID or region ARN.
+Use only the approved `opencv-worker-test-deploy` assumed role in the approved account and `us-east-1`. The first AWS command in a session must be `aws sts get-caller-identity`; continue only if both the account and assumed role match the approval. Do not run AWS commands as root or use another identity. Stop on access denied or any unexpected permission, resource, cost, or proposed action. Prepare the CloudFormation service role, Lambda execution role, and permissions boundary separately under the approved policy proposal.
 
-Set the approved account and region values for the deployment environment; these placeholders are not credentials. The account ID must be the exact 12-digit account ID covered by the approved policy documents.
+Set values only from the verified identity and approved proposal; these placeholders are not credentials:
 
 ```sh
-export AWS_ACCOUNT_ID="<approved-12-digit-account-id>"
-export AWS_REGION="<approved-region; currently us-east-1 in the policy proposal>"
+export AWS_ACCOUNT_ID="<verified-12-digit-account-id>"
+export AWS_REGION="us-east-1"
+export STACK_NAME="opencv-worker-test"
 export CFN_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/opencv-worker-test-cfn"
 export IMAGE_REPOSITORY_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/opencv-worker-test"
 ```
 
-Deploy in two stages to the **same** stack:
+Check for the external ECR repository before creating anything:
 
-1. Create the stack from the repository-only bootstrap template. It contains only the `WorkerImageRepository` ECR resource and uses `DeletionPolicy: Retain`. The final SAM template declares the same logical ID and repository name, so the second deployment updates that stack-owned repository rather than expecting SAM to create an out-of-stack repository. `EmptyOnDelete` is intentionally omitted; the repository is retained on stack deletion.
+```sh
+aws ecr describe-repositories \
+  --repository-names opencv-worker-test \
+  --region "$AWS_REGION"
+```
 
-   ```sh
-   aws cloudformation deploy \
-     --template-file ecr-bootstrap.yaml \
-     --stack-name opencv-worker-test \
-     --region "$AWS_REGION" \
-     --role-arn "$CFN_ROLE_ARN"
-   ```
+Create it only if that command returns `RepositoryNotFoundException`; on `AccessDenied`, any other error, or an unexpected existing repository configuration, stop and review rather than treating the result as absence:
 
-2. Build the final SAM template, then deploy it to the existing stack with the exact function-logical-ID-to-repository-URI mapping. This explicit mapping uploads the image to the pre-created repository without asking SAM to resolve or create image repositories automatically. Do **not** use `--resolve-image-repos`.
+```sh
+aws ecr create-repository \
+  --repository-name opencv-worker-test \
+  --region "$AWS_REGION"
+```
 
-   ```sh
-   sam validate --lint --template-file template.yaml
-   sam build --use-container --template-file template.yaml
-   sam deploy \
-     --template-file .aws-sam/build/template.yaml \
-     --stack-name opencv-worker-test \
-     --region "$AWS_REGION" \
-     --role-arn "$CFN_ROLE_ARN" \
-     --capabilities CAPABILITY_NAMED_IAM \
-     --image-repositories "PrescriptionVisionWorker=${IMAGE_REPOSITORY_URI}"
-   ```
+Validate and build locally. The current SAM build tags the image `prescriptionvisionworker:opencv5-python312`; confirm the tag from the build output if the template changes. **Stop without uploading if its size exceeds 5,000,000,000 bytes.**
 
-The mapping key is the SAM function logical ID `PrescriptionVisionWorker`, not the physical function name. The ECR repository is a stack resource with `DeletionPolicy: Retain`; there is no `EmptyOnDelete: true`. The function uses the explicitly named execution role with Lambda-only trust, the fixed logging permissions boundary, and only the proposed CloudWatch Logs write permissions. The function URL remains `FunctionUrlConfig.AuthType: AWS_IAM`; do not change it to `NONE`, add wildcard principals, enable public invoke permissions, or add a permissive CORS policy. AWS requires SigV4 for each IAM-authenticated URL request and both `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` permissions ([invocation guidance](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html), [access-control guidance](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html)). The URL is routable but **not an unauthenticated public processing endpoint**. Same-account callers can be granted narrowly scoped identity permissions; cross-account callers also need a specific resource-based grant. The Function URL configuration and SAM output follow [AWS SAM's documented `FunctionUrlConfig` pattern](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-functionurlconfig.html).
+```sh
+sam validate --lint --template-file template.yaml
+sam build --use-container --template-file template.yaml
+docker image ls --no-trunc
+IMAGE_SIZE_BYTES="$(docker image inspect prescriptionvisionworker:opencv5-python312 --format '{{.Size}}')"
+printf 'SAM image size: %s bytes\n' "$IMAGE_SIZE_BYTES"
+if [ "$IMAGE_SIZE_BYTES" -gt 5000000000 ]; then
+  echo "Image exceeds 5GB; stop without uploading." >&2
+  exit 1
+fi
+```
+
+After the size gate passes, package the image into the pre-created repository. This step uploads the image; the mapping uses the single Image function's external repository. Do not use `--resolve-image-repos` or create an ECR resource in the worker stack.
+
+```sh
+sam package \
+  --template-file .aws-sam/build/template.yaml \
+  --image-repository "$IMAGE_REPOSITORY_URI" \
+  --output-template-file .aws-sam/build/packaged-template.yaml \
+  --region "$AWS_REGION"
+```
+
+Determine the change-set type from the verified stack state: use `CREATE` only when `opencv-worker-test` does not exist, or `UPDATE` only when it exists in an updateable state. Stop on any other lookup error or unexpected stack status. Then create a uniquely named change set for review only:
+
+```sh
+export CHANGE_SET_TYPE="<CREATE-or-UPDATE-after-verifying-stack-state>"
+export CHANGE_SET_NAME="opencv-worker-test-review-$(date -u +%Y%m%dT%H%M%SZ)"
+
+aws cloudformation create-change-set \
+  --stack-name "$STACK_NAME" \
+  --change-set-name "$CHANGE_SET_NAME" \
+  --change-set-type "$CHANGE_SET_TYPE" \
+  --template-body file://.aws-sam/build/packaged-template.yaml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --role-arn "$CFN_ROLE_ARN" \
+  --region "$AWS_REGION"
+
+aws cloudformation wait change-set-create-complete \
+  --stack-name "$STACK_NAME" \
+  --change-set-name "$CHANGE_SET_NAME" \
+  --region "$AWS_REGION"
+
+aws cloudformation describe-change-set \
+  --stack-name "$STACK_NAME" \
+  --change-set-name "$CHANGE_SET_NAME" \
+  --region "$AWS_REGION" \
+  --query 'Changes[].ResourceChange.{Action:Action,LogicalResourceId:LogicalResourceId,ResourceType:ResourceType,Replacement:Replacement}' \
+  --output table
+```
+
+Review the complete change set and stop if it contains anything beyond the worker Lambda, its execution role, its `AWS_IAM`-authenticated Function URL, and the explicit 7-day log group. No ECR resource, public invoke permission, Appwrite resource, or unrelated action is allowed. **Do not run `execute-change-set` or otherwise apply the change set.**
+
+The function uses the explicitly named execution role with Lambda-only trust, the fixed logging permissions boundary, and only the proposed CloudWatch Logs write permissions. The function URL remains `FunctionUrlConfig.AuthType: AWS_IAM`; do not change it to `NONE`, add wildcard principals, enable public invoke permissions, or add a permissive CORS policy. AWS requires SigV4 for each IAM-authenticated URL request and both `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` permissions ([invocation guidance](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html), [access-control guidance](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html)). The URL is routable but **not an unauthenticated public processing endpoint**. Same-account callers can be granted narrowly scoped identity permissions; cross-account callers also need a specific resource-based grant. The Function URL configuration and SAM output follow [AWS SAM's documented `FunctionUrlConfig` pattern](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-functionurlconfig.html).
 
 Grant a caller only the two invoke actions on the deployed function ARN, constrained to this Function URL. For example, an identity policy can use the following resource-scoped shape (replace the ARN only after deployment and review):
 
