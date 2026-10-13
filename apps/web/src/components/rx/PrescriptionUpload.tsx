@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Camera, Loader2, Upload } from "lucide-react";
-import { ExecutionMethod, ID } from "appwrite";
+import { ExecutionMethod, ID, Permission, Role } from "appwrite";
 import { account, functions, storage } from "@/lib/appwrite";
+import { preprocessPrescriptionImage } from "@/lib/prescription-image-preprocessing";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/lib/i18n";
@@ -27,13 +28,16 @@ export default function PrescriptionUpload() {
         nav(`/patient-auth?next=${encodeURIComponent("/rx/upload")}`);
         return;
       }
-      const ocr = await recognizeDocumentText(file);
-      const uploaded = await storage.createFile(BUCKET, ID.unique(), file);
+      const uploaded = await storage.createFile(BUCKET, ID.unique(), file, [
+        Permission.read(Role.user(user.$id)),
+        Permission.delete(Role.user(user.$id)),
+      ]);
+      const ocrFile = await preprocessPrescriptionImage(file, uploaded.$id);
+      const ocr = await recognizeDocumentText(ocrFile);
       const exec = await functions.createExecution(
         "ocr-prescription-parser",
         JSON.stringify({
           imageId: uploaded.$id,
-          user_id: user.$id,
           text: ocr.text || undefined,
           ocr_source: ocr.source,
         }),
