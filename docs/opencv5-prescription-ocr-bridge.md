@@ -38,11 +38,16 @@ The IAM identity needs only the worker-specific `lambda:InvokeFunctionUrl` permi
 
 The worker accepts at most 4 MiB and 24 megapixels; the Appwrite-to-worker request is time-limited to 15 seconds to leave headroom under Appwrite's 30-second synchronous execution limit. The synchronous execution response contains the processed image as base64, so **do not assume that response is transient**: verify Appwrite execution-history retention and access controls for `responseBody` before enabling the flag. If those controls are not acceptable for prescription images, redesign the transfer path rather than weakening auth or file permissions. Do not log request/response bodies, image bytes, credentials, or patient content. Enabling the flag is a separate product/privacy decision because a copy of the user's prescription image will be processed by AWS.
 
+## Reproducible build inputs
+
+The Appwrite Function's `package-lock.json` locks `node-appwrite` to `14.2.0` and `zod` to `3.25.76`; use `npm ci` to install the committed dependency tree. The worker Dockerfile pins the Linux/amd64 child manifest of AWS's `public.ecr.aws/lambda/python:3.12` image to `sha256:e244a3ce9f8b77c8afe7a8403e67f845ecdb7ae09992b1a1d6139e4edde26380` (resolved from the AWS public manifest on 2026-10-13) to match the Lambda `x86_64` architecture. A pinned digest does not receive later upstream image patches automatically; review and update it deliberately when refreshing the runtime.
+
 ## Local verification
 
 The integration tests use synthetic bytes and mocked Appwrite/AWS clients only; they make no network calls. From `functions/ocr-prescription-parser`:
 
 ```sh
+npm ci
 npm test
 ```
 
